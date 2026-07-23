@@ -866,7 +866,16 @@
 
             cards = savedCards ? JSON.parse(savedCards) : sampleCards;
             items = savedItems ? JSON.parse(savedItems) : sampleItems;
-            categories = savedCats ? JSON.parse(savedCats) : defaultCategories;
+
+            if (savedCats) {
+                const parsed = JSON.parse(savedCats);
+                const catMap = new Map();
+                defaultCategories.forEach(c => catMap.set(c.name, c));
+                parsed.forEach(c => catMap.set(c.name, c));
+                categories = Array.from(catMap.values());
+            } else {
+                categories = [...defaultCategories];
+            }
 
             if (!savedCards) saveLocalStorageData();
         }
@@ -1007,9 +1016,18 @@
                 const cloudCats = [];
                 snapshot.forEach(doc => cloudCats.push({ id: doc.id, ...doc.data() }));
                 if (cloudCats.length > 0) {
-                    categories = cloudCats;
+                    const catMap = new Map();
+                    defaultCategories.forEach(c => catMap.set(c.name, c));
+                    categories.forEach(c => catMap.set(c.name, c));
+                    cloudCats.forEach(c => catMap.set(c.name, c));
+                    categories = Array.from(catMap.values());
                     saveLocalStorageData();
                     renderAllViews();
+                } else {
+                    // Seed default categories to Firestore if empty
+                    categories.forEach(cat => {
+                        syncToFirestore('categories', cat.name, cat);
+                    });
                 }
             });
         }
@@ -1501,7 +1519,9 @@
             const catObj = { name, color };
             categories.push(catObj);
             saveLocalStorageData();
-            syncToFirestore('categories', name, catObj);
+
+            // Sync all current categories to Firestore so none are missing
+            categories.forEach(c => syncToFirestore('categories', c.name, c));
 
             document.getElementById('newCatName').value = '';
             renderAllViews();
