@@ -140,7 +140,7 @@
                 </div>
             </div>
 
-            <!-- Card 3: Next Month Obligation -->
+            <!-- Card 3: Next Month Obligation (Dynamic real date calculation) -->
             <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
                 <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
                     <span class="text-xs font-semibold uppercase tracking-wider">ยอดผ่อนชำระเดือนถัดไป</span>
@@ -150,7 +150,7 @@
                 <div class="text-xs text-slate-400 dark:text-slate-500 mt-1" id="statNextMonthLabel">ประจำเดือนถัดไป</div>
             </div>
 
-            <!-- Card 4: Current Month Obligation -->
+            <!-- Card 4: Current Month Obligation (Dynamic real date calculation) -->
             <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
                 <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
                     <span class="text-xs font-semibold uppercase tracking-wider">ยอดต้องชำระเดือนนี้</span>
@@ -192,7 +192,7 @@
         <!-- TAB 1: Analytics View (Card Monthly Breakdown & Category Donut Chart) -->
         <div id="tabContent-analytics" class="tab-content space-y-6">
             
-            <!-- SECTION 1: Credit Card Monthly Payment Table -->
+            <!-- SECTION 1: Credit Card Monthly Payment Table with Payment Type Filters -->
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
@@ -202,16 +202,28 @@
                             <p class="text-xs text-slate-500 dark:text-slate-400">คำนวณรอบตัดบิลตามวันตัดรอบของบัตรแต่ละใบให้อัตโนมัติ</p>
                         </div>
                     </div>
-                    <!-- Year Filter Selector -->
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs text-slate-500 font-medium">เลือกปี:</span>
-                        <select id="cardTableYearSelect" onchange="renderCardMonthlyAnalytics()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
-                            <option value="2026">ปี 2026</option>
-                            <option value="2027">ปี 2027</option>
-                            <option value="2028">ปี 2028</option>
-                            <option value="2029">ปี 2029</option>
-                            <option value="2030">ปี 2030</option>
-                        </select>
+
+                    <!-- Filter Controls (Year & Payment Type Filter) -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs text-slate-500 font-medium">รูปแบบ:</span>
+                            <select id="cardTablePayTypeSelect" onchange="renderCardMonthlyAnalytics()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                                <option value="ALL">ทั้งหมด (ผ่อน + ชำระเต็ม)</option>
+                                <option value="installment">เฉพาะผ่อนชำระ</option>
+                                <option value="full">เฉพาะชำระเต็มจำนวน</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs text-slate-500 font-medium">เลือกปี:</span>
+                            <select id="cardTableYearSelect" onchange="renderCardMonthlyAnalytics()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                                <option value="2026">ปี 2026</option>
+                                <option value="2027">ปี 2027</option>
+                                <option value="2028">ปี 2028</option>
+                                <option value="2029">ปี 2029</option>
+                                <option value="2030">ปี 2030</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -240,6 +252,9 @@
                         <tbody id="cardMonthlyTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
                             <!-- Injected dynamically -->
                         </tbody>
+                        <tfoot id="cardMonthlyTableFoot" class="bg-slate-100 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-600">
+                            <!-- Injected dynamically for total summary -->
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -251,7 +266,7 @@
                         <i class="fa-solid fa-chart-pie text-violet-500 text-xl"></i>
                         <div>
                             <h2 class="text-base font-bold text-slate-800 dark:text-white">แผนภูมิวรกลมแสดงสัดส่วนค่าใช้จ่ายแยกตามหมวดหมู่รายเดือน</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิมิวรกลมสัดส่วนการใช้จ่ายรายหมวดหมู่แบบละเอียด</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิมิวรกลมสัดส่วนการใช้จ่ายรายหมวดหมู่แบบรายละเอียด</p>
                         </div>
                     </div>
 
@@ -269,7 +284,7 @@
                         <select id="catMonthSelect" onchange="renderCategoryAnalytics()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
                             <option value="1">มกราคม (ม.ค.)</option>
                             <option value="2">กุมภาพันธ์ (ก.พ.)</option>
-                            <option value="3" selected>มีนาคม (มี.ค.)</option>
+                            <option value="3">มีนาคม (มี.ค.)</option>
                             <option value="4">เมษายน (เม.ย.)</option>
                             <option value="5">พฤษภาคม (พ.ค.)</option>
                             <option value="6">มิถุนายน (มิ.ย.)</option>
@@ -295,7 +310,7 @@
                     <div class="md:col-span-7">
                         <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 space-y-4">
                             <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
-                                <h3 id="catSummaryTitle" class="text-sm font-bold text-slate-800 dark:text-white">สรุปค่าใช้จ่าย มีนาคม 2026</h3>
+                                <h3 id="catSummaryTitle" class="text-sm font-bold text-slate-800 dark:text-white">สรุปค่าใช้จ่าย</h3>
                                 <span id="catTotalBadge" class="text-sm font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-xl">฿0.00</span>
                             </div>
 
@@ -431,7 +446,6 @@
 
     </main>
 
-
     <!-- Modal 1: Login / Authentication -->
     <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150">
@@ -446,7 +460,12 @@
             </div>
             
             <form onsubmit="handleLoginSubmit(event)" class="mt-4 space-y-4">
-                <div id="loginErrorMsg" class="hidden p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-800"></div>
+                <div id="loginErrorMsg" class="hidden p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-800 flex flex-col gap-2">
+                    <span id="loginErrorText"></span>
+                    <button type="button" onclick="closeModal('loginModal'); openModal('settingsModal');" class="text-left text-indigo-600 dark:text-indigo-400 font-bold underline text-xs">
+                        <i class="fa-solid fa-gear mr-1"></i>คลิกที่นี่เพื่อไปตั้งค่า Firebase Config
+                    </button>
+                </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">อีเมลผู้ใช้งาน *</label>
@@ -513,7 +532,7 @@
         </div>
     </div>
 
-    <!-- Modal 3: Add / Edit Item (WITH TRANSACTION DATE FIELD) -->
+    <!-- Modal 3: Add / Edit Item (With Transaction Date AND Auto-Set Start Month/Year Selectors) -->
     <div id="addItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
@@ -537,7 +556,7 @@
                             <button type="button" onclick="openModal('manageCategoriesModal')" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline"><i class="fa-solid fa-plus-circle mr-1"></i>จัดการ</button>
                         </div>
                         <select id="itemCategory" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
-                            <!-- Populated dynamically from categories -->
+                            <!-- Populated dynamically -->
                         </select>
                     </div>
                     <div>
@@ -548,7 +567,7 @@
                     </div>
                 </div>
 
-                <!-- Transaction Date Picker (CRITICAL FIELD) -->
+                <!-- Transaction Date Picker -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">วันที่ทำรายการ (วันที่ซื้อสินค้า) *</label>
                     <input type="date" id="itemTransactionDate" required onchange="updateFirstBillingPreview()" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
@@ -586,10 +605,41 @@
                     </div>
                 </div>
 
+                <!-- Explicit Start Payment Month & Year Dropdowns (Auto-Updated from Cut-off Calculation) -->
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เดือนที่เริ่มชำระจริง *</label>
+                        <select id="itemStartMonth" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                            <option value="1">มกราคม (1)</option>
+                            <option value="2">กุมภาพันธ์ (2)</option>
+                            <option value="3">มีนาคม (3)</option>
+                            <option value="4">เมษายน (4)</option>
+                            <option value="5">พฤษภาคม (5)</option>
+                            <option value="6">มิถุนายน (6)</option>
+                            <option value="7">กรกฎาคม (7)</option>
+                            <option value="8">สิงหาคม (8)</option>
+                            <option value="9">กันยายน (9)</option>
+                            <option value="10">ตุลาคม (10)</option>
+                            <option value="11">พฤศจิกายน (11)</option>
+                            <option value="12">ธันวาคม (12)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ปีที่เริ่มชำระ *</label>
+                        <select id="itemStartYear" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Auto-Calculated Payment Schedule Hint Box -->
                 <div id="firstBillingHintBox" class="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
                     <i class="fa-solid fa-calculator text-indigo-500 text-sm"></i>
-                    <span id="firstBillingHintText">โปรดเลือกวันที่ทำรายการเพื่อคำนวณวันจ่ายงวดแรก</span>
+                    <span id="firstBillingHintText">เลือกวันที่ทำรายการเพื่อคำนวณวันจ่ายงวดแรกอัตโนมัติ</span>
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
@@ -701,16 +751,16 @@
 
         // Sample Initial Cards
         const sampleCards = [
-            { id: 'card-1', name: 'KTC Platinum', limit: 100000, billingDay: 20, dueDate: 10, color: 'from-indigo-600 to-blue-700' },
-            { id: 'card-2', name: 'SCB Beyond', limit: 80000, billingDay: 15, dueDate: 5, color: 'from-purple-600 to-indigo-800' },
+            { id: 'card-1', name: 'The1 5500', limit: 100000, billingDay: 15, dueDate: 5, color: 'from-indigo-600 to-blue-700' },
+            { id: 'card-2', name: 'TTB Flash', limit: 80000, billingDay: 12, dueDate: 1, color: 'from-purple-600 to-indigo-800' },
             { id: 'card-3', name: 'UOB Premier', limit: 120000, billingDay: 25, dueDate: 17, color: 'from-slate-800 to-zinc-900' }
         ];
 
-        // Sample Items with explicit transaction dates
+        // Sample Items
         const sampleItems = [
-            { id: 'item-1', cardId: 'card-1', name: 'ซื้อโทรศัพท์มือถือ', category: 'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า', transactionDate: '2026-01-12', totalAmount: 48000, months: 10, payType: 'installment' },
-            { id: 'item-2', cardId: 'card-2', name: 'เติมน้ำมันรถยนต์', category: 'น้ำมันรถ', transactionDate: '2026-02-18', totalAmount: 3500, months: 1, payType: 'full' },
-            { id: 'item-3', cardId: 'card-3', name: 'จองโรงแรมที่พักภูเก็ต', category: 'ท่องเที่ยว/โรงแรม', transactionDate: '2026-02-10', totalAmount: 24000, months: 6, payType: 'installment' }
+            { id: 'item-1', cardId: 'card-1', name: 'ซื้อโทรศัพท์มือถือ', category: 'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า', transactionDate: '2026-07-20', startMonth: 8, startYear: 2026, totalAmount: 48000, months: 10, payType: 'installment' },
+            { id: 'item-2', cardId: 'card-2', name: 'เติมน้ำมันรถยนต์', category: 'น้ำมันรถ', transactionDate: '2026-07-05', startMonth: 7, startYear: 2026, totalAmount: 2000, months: 1, payType: 'full' },
+            { id: 'item-3', cardId: 'card-3', name: 'จองโรงแรมที่พักภูเก็ต', category: 'ท่องเที่ยว/โรงแรม', transactionDate: '2026-07-10', startMonth: 8, startYear: 2026, totalAmount: 24000, months: 6, payType: 'installment' }
         ];
 
         /* Initialize Application */
@@ -723,7 +773,20 @@
 
             // Set default date picker value to today
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('itemTransactionDate').value = today;
+            const dateInput = document.getElementById('itemTransactionDate');
+            if (dateInput) {
+                dateInput.value = today;
+                updateFirstBillingPreview();
+            }
+
+            // Set default year/month dropdown selectors on Donut Chart to real current month/year
+            const now = new Date();
+            const curY = now.getFullYear();
+            const curM = now.getMonth() + 1;
+            const catYSelect = document.getElementById('catYearSelect');
+            const catMSelect = document.getElementById('catMonthSelect');
+            if (catYSelect) catYSelect.value = curY.toString();
+            if (catMSelect) catMSelect.value = curM.toString();
         });
 
         function initTheme() {
@@ -826,13 +889,14 @@
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             const errEl = document.getElementById('loginErrorMsg');
+            const errText = document.getElementById('loginErrorText');
             const submitBtn = document.getElementById('loginSubmitBtn');
 
             errEl.classList.add('hidden');
             submitBtn.disabled = true;
 
             if (!auth) {
-                errEl.innerText = 'โปรดตั้งค่า Firebase Config ในหน้าตั้งค่าก่อนเข้าสู่ระบบ';
+                errText.innerText = 'โปรดตั้งค่า Firebase Config ในหน้าตั้งค่าก่อนเข้าสู่ระบบ';
                 errEl.classList.remove('hidden');
                 submitBtn.disabled = false;
                 return;
@@ -844,7 +908,7 @@
                     submitBtn.disabled = false;
                 })
                 .catch((error) => {
-                    errEl.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+                    errText.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
                     errEl.classList.remove('hidden');
                     submitBtn.disabled = false;
                 });
@@ -918,14 +982,11 @@
             if (!txDateStr) return { startMonth: 1, startYear: 2026 };
 
             const card = cards.find(c => c.id === cardId) || { billingDay: 20 };
-            const dt = new Date(txDateStr);
-            let year = dt.getFullYear();
-            let month = dt.getMonth() + 1; // 1-12
-            let day = dt.getDate();
+            const parts = txDateStr.split('-');
+            let year = parseInt(parts[0]);
+            let month = parseInt(parts[1]); // 1-12
+            let day = parseInt(parts[2]);
 
-            // Statement Cut-Off Logic:
-            // If purchase date day <= card.billingDay -> statement cuts in current month -> due payment in NEXT month
-            // If purchase date day > card.billingDay  -> statement cuts in next month    -> due payment in MONTH AFTER NEXT
             let statementMonth = month;
             let statementYear = year;
 
@@ -937,7 +998,6 @@
                 }
             }
 
-            // Payment is due in the month AFTER the statement cut-off
             let payMonth = statementMonth + 1;
             let payYear = statementYear;
             if (payMonth > 12) {
@@ -948,7 +1008,14 @@
             return { startMonth: payMonth, startYear: payYear };
         }
 
-        /* Update dynamic hint box in addItemModal */
+        function getItemSchedule(item) {
+            if (item.startMonth && item.startYear) {
+                return { startMonth: parseInt(item.startMonth), startYear: parseInt(item.startYear) };
+            }
+            return calculateFirstBillingMonth(item.transactionDate, item.cardId);
+        }
+
+        /* Update dynamic hint box and auto-update dropdowns in addItemModal */
         function updateFirstBillingPreview() {
             const txDate = document.getElementById('itemTransactionDate').value;
             const cardId = document.getElementById('itemCardId').value;
@@ -961,6 +1028,10 @@
 
             document.getElementById('firstBillingHintText').innerHTML = 
                 `ซื้อวันที่ <b>${txDate}</b> (ตัดรอบวันที่ ${card.billingDay}) ➔ ยอดจะเริ่มเก็บในเดือน <b>${monthText} ${startYear}</b>`;
+
+            // Auto-set start month and year dropdowns
+            document.getElementById('itemStartMonth').value = startMonth.toString();
+            document.getElementById('itemStartYear').value = startYear.toString();
         }
 
         /* Render All UI Views */
@@ -988,8 +1059,10 @@
                 else totalInstallmentSpent += amt;
             });
 
-            const currentYear = 2026;
-            const currentMonth = 3; // มีนาคม 2026
+            // Dynamic current system date
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1; // 1-12
             
             let nextMonth = currentMonth + 1;
             let nextYear = currentYear;
@@ -1003,7 +1076,7 @@
 
             items.forEach(item => {
                 const monthlyPay = item.totalAmount / item.months;
-                const { startMonth, startYear } = calculateFirstBillingMonth(item.transactionDate, item.cardId);
+                const { startMonth, startYear } = getItemSchedule(item);
 
                 for (let m = 0; m < item.months; m++) {
                     let yOffset = Math.floor((startMonth - 1 + m) / 12);
@@ -1032,20 +1105,34 @@
             document.getElementById('statNextMonthLabel').innerText = `ประจำเดือน ${thaiMonthsFull[nextMonth - 1]} ${nextYear}`;
 
             document.getElementById('statCurrentMonthPay').innerText = '฿' + currentMonthPay.toLocaleString('th-TH', {minimumFractionDigits: 2});
+            document.getElementById('statCurrentMonthLabel').innerText = `ประจำเดือน ${thaiMonthsFull[currentMonth - 1]} ${currentYear}`;
         }
 
         function renderCardMonthlyAnalytics() {
             const tbody = document.getElementById('cardMonthlyTableBody');
+            const tfoot = document.getElementById('cardMonthlyTableFoot');
             tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
             const selectedYear = parseInt(document.getElementById('cardTableYearSelect').value);
+            const selectedPayType = document.getElementById('cardTablePayTypeSelect').value; // ALL, installment, full
+
+            const grandMonthlyTotals = Array(12).fill(0);
 
             cards.forEach(card => {
                 const monthlyTotals = Array(12).fill(0);
-                const cardItems = items.filter(i => i.cardId === card.id);
+
+                const cardItems = items.filter(i => {
+                    if (i.cardId !== card.id) return false;
+                    const isFull = i.payType === 'full' || parseInt(i.months) === 1;
+                    if (selectedPayType === 'installment' && isFull) return false;
+                    if (selectedPayType === 'full' && !isFull) return false;
+                    return true;
+                });
 
                 cardItems.forEach(item => {
                     const monthlyPay = item.totalAmount / item.months;
-                    const { startMonth, startYear } = calculateFirstBillingMonth(item.transactionDate, item.cardId);
+                    const { startMonth, startYear } = getItemSchedule(item);
 
                     for (let m = 0; m < item.months; m++) {
                         let yOffset = Math.floor((startMonth - 1 + m) / 12);
@@ -1054,6 +1141,7 @@
 
                         if (itemYear === selectedYear) {
                             monthlyTotals[itemMonth - 1] += monthlyPay;
+                            grandMonthlyTotals[itemMonth - 1] += monthlyPay;
                         }
                     }
                 });
@@ -1082,6 +1170,24 @@
 
                 tbody.innerHTML += rowHtml;
             });
+
+            // Summary row (Total of all cards combined)
+            const grandTotalYear = grandMonthlyTotals.reduce((a, b) => a + b, 0);
+            let footHtml = `<tr>
+                <td class="p-3 sm:p-4 font-extrabold text-slate-900 dark:text-white sticky left-0 bg-slate-100 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700">ยอดรวมทุกบัตร (${selectedYear})</td>
+                <td colspan="2" class="p-3 text-center text-slate-500 text-xs font-semibold">ทุกรอบบิล</td>`;
+
+            grandMonthlyTotals.forEach(val => {
+                footHtml += `<td class="p-3 text-right font-extrabold text-indigo-700 dark:text-indigo-300">
+                    ${val > 0 ? '฿' + Math.round(val).toLocaleString() : '-'}
+                </td>`;
+            });
+
+            footHtml += `<td class="p-3 text-right font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40">
+                ฿${Math.round(grandTotalYear).toLocaleString()}
+            </td></tr>`;
+
+            tfoot.innerHTML = footHtml;
         }
 
         function renderCategoryAnalytics() {
@@ -1093,7 +1199,7 @@
             items.forEach(item => {
                 const monthlyPay = item.totalAmount / item.months;
                 const catName = item.category || 'อื่นๆ';
-                const { startMonth, startYear } = calculateFirstBillingMonth(item.transactionDate, item.cardId);
+                const { startMonth, startYear } = getItemSchedule(item);
 
                 for (let m = 0; m < item.months; m++) {
                     let yOffset = Math.floor((startMonth - 1 + m) / 12);
@@ -1173,7 +1279,7 @@
 
                 items.forEach(item => {
                     const monthlyPay = item.totalAmount / item.months;
-                    const { startMonth, startYear } = calculateFirstBillingMonth(item.transactionDate, item.cardId);
+                    const { startMonth, startYear } = getItemSchedule(item);
 
                     for (let m = 0; m < item.months; m++) {
                         let yOffset = Math.floor((startMonth - 1 + m) / 12);
@@ -1227,7 +1333,7 @@
                 const monthlyPay = item.totalAmount / item.months;
                 const isFullPay = item.payType === 'full' || parseInt(item.months) === 1;
 
-                const { startMonth, startYear } = calculateFirstBillingMonth(item.transactionDate, item.cardId);
+                const { startMonth, startYear } = getItemSchedule(item);
 
                 const payBadge = isFullPay
                     ? `<span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">ชำระเต็ม</span>`
@@ -1320,7 +1426,7 @@
             const list = document.getElementById('categoriesList');
             list.innerHTML = '';
 
-            categories.forEach((cat, index) => {
+            categories.forEach((cat) => {
                 list.innerHTML += `
                     <li class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-700/50">
                         <div class="flex items-center gap-2">
@@ -1416,6 +1522,8 @@
                 category: document.getElementById('itemCategory').value,
                 cardId: document.getElementById('itemCardId').value,
                 transactionDate: document.getElementById('itemTransactionDate').value,
+                startMonth: parseInt(document.getElementById('itemStartMonth').value),
+                startYear: parseInt(document.getElementById('itemStartYear').value),
                 totalAmount: parseFloat(document.getElementById('itemTotalAmount').value),
                 payType: payType,
                 months: payType === 'full' ? 1 : parseInt(document.getElementById('itemMonths').value)
@@ -1479,6 +1587,11 @@
             togglePayTypeFields();
 
             document.getElementById('itemMonths').value = item.months;
+
+            const { startMonth, startYear } = getItemSchedule(item);
+            document.getElementById('itemStartMonth').value = startMonth.toString();
+            document.getElementById('itemStartYear').value = startYear.toString();
+
             updateFirstBillingPreview();
             openModal('addItemModal');
         }
@@ -1504,6 +1617,7 @@
                 document.getElementById('itemForm').reset();
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('itemTransactionDate').value = today;
+                updateFirstBillingPreview();
             }
         }
 
