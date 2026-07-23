@@ -25,6 +25,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Chart.js for Pie/Donut Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -91,7 +94,7 @@
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Offline / Login Alert Banner -->
+        <!-- Login Alert Banner -->
         <div id="firebaseHelpBanner" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-4 text-sm text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-lock text-amber-600 text-xl flex-shrink-0"></i>
@@ -154,7 +157,10 @@
         <!-- Navigation Tabs & Action Bar -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700 pb-2">
             <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto custom-scrollbar pb-2 sm:pb-0">
-                <button onclick="switchTab('planner')" id="tabBtn-planner" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-indigo-600 text-white shadow-sm">
+                <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-indigo-600 text-white shadow-sm">
+                    <i class="fa-solid fa-chart-pie mr-2"></i>สรุปแยกตามบัตร & หมวดหมู่
+                </button>
+                <button onclick="switchTab('planner')" id="tabBtn-planner" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800">
                     <i class="fa-solid fa-calendar-days mr-2"></i>แผนผ่อนชำระ 5 ปี (2026-2030)
                 </button>
                 <button onclick="switchTab('items')" id="tabBtn-items" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800">
@@ -176,8 +182,138 @@
             </div>
         </div>
 
-        <!-- TAB 1: 5-Year Installment Planner (2026-2030 Matrix) -->
-        <div id="tabContent-planner" class="tab-content space-y-4">
+        <!-- TAB 1: Analytics View (Card Monthly Breakdown & Category Donut Chart) -->
+        <div id="tabContent-analytics" class="tab-content space-y-6">
+            
+            <!-- SECTION 1: Credit Card Monthly Payment Table -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-credit-card text-indigo-600 dark:text-indigo-400 text-lg"></i>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-white">ตารางสรุปยอดชำระแยกตามบัตรเครดิต รายเดือน</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">วิเคราะห์ยอดที่ต้องชำระของบัตรเครดิตตามวันตัดรอบและวันชำระจริงในแต่ละเดือน</p>
+                        </div>
+                    </div>
+                    <!-- Year Filter Selector for Cards Table -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500 font-medium">เลือกปี:</span>
+                        <select id="cardTableYearSelect" onchange="renderCardMonthlyAnalytics()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                            <option value="2026">ปี 2026</option>
+                            <option value="2027">ปี 2027</option>
+                            <option value="2028">ปี 2028</option>
+                            <option value="2029">ปี 2029</option>
+                            <option value="2030">ปี 2030</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-900 text-slate-200 border-b border-slate-800 uppercase tracking-wider">
+                                <th class="p-3 sm:p-4 font-semibold sticky left-0 bg-slate-900 z-10">ชื่อบัตรเครดิต</th>
+                                <th class="p-3 font-semibold text-center">ตัดรอบ</th>
+                                <th class="p-3 font-semibold text-center">ครบกำหนด</th>
+                                <th class="p-3 font-semibold text-right">ม.ค.</th>
+                                <th class="p-3 font-semibold text-right">ก.พ.</th>
+                                <th class="p-3 font-semibold text-right">มี.ค.</th>
+                                <th class="p-3 font-semibold text-right">เม.ย.</th>
+                                <th class="p-3 font-semibold text-right">พ.ค.</th>
+                                <th class="p-3 font-semibold text-right">มิ.ย.</th>
+                                <th class="p-3 font-semibold text-right">ก.ค.</th>
+                                <th class="p-3 font-semibold text-right">ส.ค.</th>
+                                <th class="p-3 font-semibold text-right">ก.ย.</th>
+                                <th class="p-3 font-semibold text-right">ต.ค.</th>
+                                <th class="p-3 font-semibold text-right">พ.ย.</th>
+                                <th class="p-3 font-semibold text-right">ธ.ค.</th>
+                                <th class="p-3 font-semibold text-right bg-slate-800 text-amber-400">รวมทั้งปี</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cardMonthlyTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Category Pie/Donut Chart & Breakdown Table -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-4 sm:p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700 pb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-violet-500 text-xl"></i>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-white">แผนภูมิวรกลมแสดงสัดส่วนค่าใช้จ่ายแยกตามหมวดหมู่รายเดือน</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิมิวรกลมสัดส่วนการใช้จ่ายรายหมวดหมู่แบบละเอียด</p>
+                        </div>
+                    </div>
+
+                    <!-- Year & Month Selectors for Category Chart -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500 font-medium">ปี:</span>
+                        <select id="catYearSelect" onchange="renderCategoryAnalytics()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                        <span class="text-xs text-slate-500 font-medium">เดือน:</span>
+                        <select id="catMonthSelect" onchange="renderCategoryAnalytics()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                            <option value="1">มกราคม (ม.ค.)</option>
+                            <option value="2">กุมภาพันธ์ (ก.พ.)</option>
+                            <option value="3" selected>มีนาคม (มี.ค.)</option>
+                            <option value="4">เมษายน (เม.ย.)</option>
+                            <option value="5">พฤษภาคม (พ.ค.)</option>
+                            <option value="6">มิถุนายน (มิ.ย.)</option>
+                            <option value="7">กรกฎาคม (ก.ค.)</option>
+                            <option value="8">สิงหาคม (ส.ค.)</option>
+                            <option value="9">กันยายน (ก.ย.)</option>
+                            <option value="10">ตุลาคม (ต.ค.)</option>
+                            <option value="11">พฤศจิกายน (พ.ย.)</option>
+                            <option value="12">ธันวาคม (ธ.ค.)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <!-- Chart Canvas Column -->
+                    <div class="md:col-span-5 flex flex-col items-center justify-center p-4">
+                        <div class="w-full max-w-xs relative aspect-square">
+                            <canvas id="categoryDonutChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown Table Column -->
+                    <div class="md:col-span-7">
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+                                <h3 id="catSummaryTitle" class="text-sm font-bold text-slate-800 dark:text-white">สรุปค่าใช้จ่าย มีนาคม 2026</h3>
+                                <span id="catTotalBadge" class="text-sm font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-xl">฿0.00</span>
+                            </div>
+
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table class="w-full text-left text-xs sm:text-sm">
+                                    <thead>
+                                        <tr class="text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700 uppercase">
+                                            <th class="py-2 font-semibold">หมวดหมู่ค่าใช้จ่าย</th>
+                                            <th class="py-2 text-right font-semibold">จำนวนเงิน (บาท)</th>
+                                            <th class="py-2 text-right font-semibold">สัดส่วน (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="categoryTableBody" class="divide-y divide-slate-200/50 dark:divide-slate-700/40">
+                                        <!-- Injected dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: 5-Year Installment Planner Matrix (2026-2030) -->
+        <div id="tabContent-planner" class="tab-content hidden space-y-4">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -226,7 +362,7 @@
             </div>
         </div>
 
-        <!-- TAB 2: Items List (Transactions) -->
+        <!-- TAB 3: Items List (Transactions) -->
         <div id="tabContent-items" class="tab-content hidden space-y-4">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -242,6 +378,7 @@
                         <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase">
                             <tr>
                                 <th class="p-3.5 font-semibold">ชื่อรายการ / สินค้า</th>
+                                <th class="p-3.5 font-semibold">หมวดหมู่</th>
                                 <th class="p-3.5 font-semibold">ประเภทชำระ</th>
                                 <th class="p-3.5 font-semibold">บัตรเครดิตที่ใช้</th>
                                 <th class="p-3.5 font-semibold text-right">ยอดรวมทั้งหมด</th>
@@ -259,7 +396,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: Cards List View -->
+        <!-- TAB 4: Cards List View -->
         <div id="tabContent-cards" class="tab-content hidden space-y-4">
             <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 <!-- Cards injected dynamically -->
@@ -313,7 +450,7 @@
                 <input type="hidden" id="cardId">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อบัตรเครดิต *</label>
-                    <input type="text" id="cardName" required placeholder="เช่น KTC Platinum, SCB Beyond" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="cardName" required placeholder="เช่น KTC Platinum, SCB Beyond, UOB Premier" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">วงเงินบัตรเครดิต (บาท) *</label>
@@ -349,7 +486,7 @@
         </div>
     </div>
 
-    <!-- Modal: Add / Edit Item (Enhanced with Pay Type) -->
+    <!-- Modal: Add / Edit Item (Enhanced with Category and Payment Type) -->
     <div id="addItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
@@ -360,9 +497,31 @@
             </div>
             <form id="itemForm" onsubmit="handleSaveItem(event)" class="mt-4 space-y-4">
                 <input type="hidden" id="itemId">
+                
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อรายการ / สินค้า *</label>
-                    <input type="text" id="itemName" required placeholder="เช่น iPhone 16 Pro, ตู้เย็น, เติมน้ำมัน" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="itemName" required placeholder="เช่น iPhone 16 Pro, เติมน้ำมัน, โรงแรม" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">หมวดหมู่สินค้า *</label>
+                        <select id="itemCategory" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                            <option value="น้ำมันรถ">⛽ น้ำมันรถ</option>
+                            <option value="อาหารแมวและของใช้">🐱 อาหารและของใช้สัตว์</option>
+                            <option value="อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า">📱 อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า</option>
+                            <option value="ท่องเที่ยว/โรงแรม">✈️ ท่องเที่ยว/โรงแรม</option>
+                            <option value="ช้อปปิ้ง/สินค้าทั่วไป">🛒 ช้อปปิ้ง/สินค้าทั่วไป</option>
+                            <option value="อาหาร/ซูเปอร์มาร์เก็ต">🍲 อาหาร/ซูเปอร์มาร์เก็ต</option>
+                            <option value="อื่นๆ">📦 อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เลือกบัตรเครดิต *</label>
+                        <select id="itemCardId" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Payment Type Selection (Full vs Installment) -->
@@ -386,17 +545,9 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เลือกบัตรเครดิต *</label>
-                        <select id="itemCardId" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ยอดรวมทั้งหมด (บาท) *</label>
-                        <input type="number" step="0.01" id="itemTotalAmount" required placeholder="36000" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
-                    </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ยอดรวมทั้งหมด (บาท) *</label>
+                    <input type="number" step="0.01" id="itemTotalAmount" required placeholder="36000" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
@@ -405,7 +556,7 @@
                         <input type="number" min="1" max="60" id="itemMonths" value="10" required placeholder="10" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เดือนที่ชำระ *</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เดือนที่เริ่มชำระ *</label>
                         <select id="itemStartMonth" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                             <option value="1">มกราคม (1)</option>
                             <option value="2">กุมภาพันธ์ (2)</option>
@@ -422,7 +573,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ปีที่ชำระ *</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ปีที่เริ่มชำระ *</label>
                         <select id="itemStartYear" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                             <option value="2026">2026</option>
                             <option value="2027">2027</option>
@@ -491,17 +642,38 @@
         let auth = null;
         let currentUser = null;
         let isFirebaseConnected = false;
+        let donutChartInstance = null;
 
-        // Sample initial seed data
+        // Thai Month Names Mapping
+        const thaiMonthsFull = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+        // Category Color Mapping
+        const categoryColorMap = {
+            "น้ำมันรถ": "#ef4444",
+            "อาหารแมวและของใช้": "#a855f7",
+            "อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า": "#3b82f6",
+            "ท่องเที่ยว/โรงแรม": "#ec4899",
+            "ช้อปปิ้ง/สินค้าทั่วไป": "#06b6d4",
+            "อาหาร/ซูเปอร์มาร์เก็ต": "#f59e0b",
+            "อื่นๆ": "#64748b"
+        };
+
+        // Sample initial seed data based on your dashboard
         const sampleCards = [
-            { id: 'card-1', name: 'KTC Platinum', limit: 100000, billingDay: 20, dueDate: 10, color: 'from-indigo-600 to-blue-700' },
-            { id: 'card-2', name: 'SCB Beyond', limit: 150000, billingDay: 15, dueDate: 5, color: 'from-purple-600 to-indigo-800' }
+            { id: 'card-1', name: 'KB 8206', limit: 100000, billingDay: 20, dueDate: 4, color: 'from-indigo-600 to-blue-700' },
+            { id: 'card-2', name: 'KB PTT 1711', limit: 80000, billingDay: 20, dueDate: 4, color: 'from-purple-600 to-indigo-800' },
+            { id: 'card-3', name: 'KB Shopee 1708', limit: 50000, billingDay: 20, dueDate: 4, color: 'from-amber-500 to-orange-600' },
+            { id: 'card-4', name: 'UOB Premier 1565', limit: 120000, billingDay: 25, dueDate: 17, color: 'from-slate-800 to-zinc-900' },
+            { id: 'card-5', name: 'UOB Lazada', limit: 60000, billingDay: 25, dueDate: 17, color: 'from-rose-500 to-red-700' }
         ];
 
         const sampleItems = [
-            { id: 'item-1', cardId: 'card-1', name: 'iPhone 16 Pro Max', totalAmount: 48000, months: 10, startMonth: 1, startYear: 2026, payType: 'installment' },
-            { id: 'item-2', cardId: 'card-2', name: 'MacBook Air M3', totalAmount: 42000, months: 12, startMonth: 3, startYear: 2026, payType: 'installment' },
-            { id: 'item-3', cardId: 'card-1', name: 'เติมน้ำมัน / ซื้อของซูเปอร์', totalAmount: 3500, months: 1, startMonth: 7, startYear: 2026, payType: 'full' }
+            { id: 'item-1', cardId: 'card-1', name: 'ผ่อนชำระโทรศัพท์มือถือ', category: 'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า', totalAmount: 8400, months: 3, startMonth: 6, startYear: 2026, payType: 'installment' },
+            { id: 'item-2', cardId: 'card-2', name: 'เติมน้ำมันรถยนต์ประจำเดือน', category: 'น้ำมันรถ', totalAmount: 1900, months: 1, startMonth: 3, startYear: 2026, payType: 'full' },
+            { id: 'item-3', cardId: 'card-4', name: 'จองโรงแรมที่พักท่องเที่ยว', category: 'ท่องเที่ยว/โรงแรม', totalAmount: 24000, months: 6, startMonth: 3, startYear: 2026, payType: 'installment' },
+            { id: 'item-4', cardId: 'card-5', name: 'ซื้อของใช้และอาหารสัตว์เลี้ยง', category: 'อาหารแมวและของใช้', totalAmount: 2800, months: 4, startMonth: 5, startYear: 2026, payType: 'installment' },
+            { id: 'item-5', cardId: 'card-4', name: 'ซื้อแท็บเล็ต iPad เรียน', category: 'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า', totalAmount: 3500, months: 1, startMonth: 3, startYear: 2026, payType: 'full' }
         ];
 
         /* Initialize App on Load */
@@ -701,6 +873,8 @@
 
         function renderAllViews() {
             renderMetrics();
+            renderCardMonthlyAnalytics();
+            renderCategoryAnalytics();
             renderPlannerMatrix();
             renderItemsList();
             renderCardsGrid();
@@ -726,9 +900,9 @@
 
             const remaining = totalLimit - totalSpent;
 
-            // Current year/month calculations (July 2026)
+            // Current year/month calculations (July 2026 default)
             const currentYear = 2026;
-            const currentMonth = 7;
+            const currentMonth = 3;
             let currentMonthPay = 0;
 
             items.forEach(item => {
@@ -758,6 +932,154 @@
             document.getElementById('statSpentPercent').innerText = `ใช้วงเงินไปแล้ว ${spentPct}%`;
 
             document.getElementById('statCurrentMonthPay').innerText = '฿' + currentMonthPay.toLocaleString('th-TH', {minimumFractionDigits: 2});
+        }
+
+        function renderCardMonthlyAnalytics() {
+            const tbody = document.getElementById('cardMonthlyTableBody');
+            tbody.innerHTML = '';
+
+            const selectedYear = parseInt(document.getElementById('cardTableYearSelect').value);
+
+            cards.forEach(card => {
+                const monthlyTotals = Array(12).fill(0);
+
+                const cardItems = items.filter(i => i.cardId === card.id);
+                cardItems.forEach(item => {
+                    const monthlyPay = item.totalAmount / item.months;
+                    for (let m = 0; m < item.months; m++) {
+                        let yOffset = Math.floor((item.startMonth - 1 + m) / 12);
+                        let itemMonth = ((item.startMonth - 1 + m) % 12) + 1;
+                        let itemYear = parseInt(item.startYear) + yOffset;
+
+                        if (itemYear === selectedYear) {
+                            monthlyTotals[itemMonth - 1] += monthlyPay;
+                        }
+                    }
+                });
+
+                const cardYearTotal = monthlyTotals.reduce((a, b) => a + b, 0);
+
+                let rowHtml = `<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                    <td class="p-3 sm:p-4 font-bold text-slate-800 dark:text-white sticky left-0 bg-white dark:bg-slate-800 z-10 border-r border-slate-100 dark:border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-credit-card text-indigo-500 text-xs"></i>
+                            <span>${card.name}</span>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center text-slate-500 font-medium">วันที่ ${card.billingDay || '-'}</td>
+                    <td class="p-3 text-center text-slate-500 font-medium">วันที่ ${card.dueDate || '-'}</td>`;
+
+                monthlyTotals.forEach(val => {
+                    rowHtml += `<td class="p-3 text-right ${val > 0 ? 'font-bold text-slate-800 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}">
+                        ${val > 0 ? '฿' + Math.round(val).toLocaleString() : '-'}
+                    </td>`;
+                });
+
+                rowHtml += `<td class="p-3 text-right font-extrabold text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-slate-800">
+                    ฿${Math.round(cardYearTotal).toLocaleString()}
+                </td></tr>`;
+
+                tbody.innerHTML += rowHtml;
+            });
+        }
+
+        function renderCategoryAnalytics() {
+            const year = parseInt(document.getElementById('catYearSelect').value);
+            const month = parseInt(document.getElementById('catMonthSelect').value);
+
+            const categoryTotals = {};
+            let totalMonthSpent = 0;
+
+            items.forEach(item => {
+                const monthlyPay = item.totalAmount / item.months;
+                const category = item.category || 'อื่นๆ';
+
+                for (let m = 0; m < item.months; m++) {
+                    let yOffset = Math.floor((item.startMonth - 1 + m) / 12);
+                    let itemMonth = ((item.startMonth - 1 + m) % 12) + 1;
+                    let itemYear = parseInt(item.startYear) + yOffset;
+
+                    if (itemYear === year && itemMonth === month) {
+                        categoryTotals[category] = (categoryTotals[category] || 0) + monthlyPay;
+                        totalMonthSpent += monthlyPay;
+                    }
+                }
+            });
+
+            // Update Header Title and Total Badge
+            const monthText = thaiMonthsFull[month - 1];
+            document.getElementById('catSummaryTitle').innerText = `สรุปค่าใช้จ่าย ${monthText} ${year}`;
+            document.getElementById('catTotalBadge').innerText = '฿' + totalMonthSpent.toLocaleString('th-TH', {minimumFractionDigits: 2});
+
+            // Render Table Rows
+            const tbody = document.getElementById('categoryTableBody');
+            tbody.innerHTML = '';
+
+            const categories = Object.keys(categoryTotals);
+            
+            if (categories.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400">ไม่มีรายการชำระเงินในเดือนนี้</td></tr>`;
+            } else {
+                categories.forEach(cat => {
+                    const amount = categoryTotals[cat];
+                    const percent = totalMonthSpent > 0 ? ((amount / totalMonthSpent) * 100).toFixed(1) : 0;
+                    const color = categoryColorMap[cat] || '#64748b';
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition">
+                            <td class="py-2.5 font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${color}"></span>
+                                <span>${cat}</span>
+                            </td>
+                            <td class="py-2.5 text-right font-bold text-slate-800 dark:text-slate-100">฿${Math.round(amount).toLocaleString()}</td>
+                            <td class="py-2.5 text-right font-bold text-indigo-600 dark:text-indigo-400">${percent}%</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Render Chart.js Donut Chart
+            const ctx = document.getElementById('categoryDonutChart').getContext('2d');
+            
+            if (donutChartInstance) {
+                donutChartInstance.destroy();
+            }
+
+            const chartLabels = categories.length > 0 ? categories : ['ไม่มีข้อมูล'];
+            const chartData = categories.length > 0 ? categories.map(c => categoryTotals[c]) : [1];
+            const chartColors = categories.length > 0 ? categories.map(c => categoryColorMap[c] || '#64748b') : ['#e2e8f0'];
+
+            donutChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: chartColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (categories.length === 0) return ' ไม่มีข้อมูล';
+                                    let val = context.raw || 0;
+                                    return ` ฿${Math.round(val).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
         }
 
         function renderPlannerMatrix() {
@@ -825,6 +1147,7 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition">
                         <td class="p-3.5 font-semibold text-slate-800 dark:text-white">${item.name}</td>
+                        <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">${item.category || 'อื่นๆ'}</span></td>
                         <td class="p-3.5">${payBadge}</td>
                         <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">${card.name}</span></td>
                         <td class="p-3.5 text-right font-semibold text-slate-800 dark:text-white">฿${parseFloat(item.totalAmount).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
@@ -933,6 +1256,7 @@
             const itemObj = {
                 id,
                 name: document.getElementById('itemName').value,
+                category: document.getElementById('itemCategory').value,
                 cardId: document.getElementById('itemCardId').value,
                 totalAmount: parseFloat(document.getElementById('itemTotalAmount').value),
                 payType: payType,
@@ -988,6 +1312,7 @@
             if (!item) return;
             document.getElementById('itemId').value = item.id;
             document.getElementById('itemName').value = item.name;
+            document.getElementById('itemCategory').value = item.category || 'อื่นๆ';
             document.getElementById('itemCardId').value = item.cardId;
             document.getElementById('itemTotalAmount').value = item.totalAmount;
             
