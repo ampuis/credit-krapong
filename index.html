@@ -58,6 +58,12 @@
 
             <!-- Header Actions -->
             <div class="flex items-center gap-2 sm:gap-3">
+                <!-- User Profile & Auth Status -->
+                <div id="userBadge" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                    <i class="fa-solid fa-user-circle text-indigo-500"></i>
+                    <span id="userEmailText">...</span>
+                </div>
+
                 <!-- Sync Status Indicator Badge -->
                 <div id="syncBadge" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                     <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
@@ -65,9 +71,14 @@
                 </div>
 
                 <!-- Theme Switcher Button -->
-                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="สลับธีม">
                     <i class="fa-solid fa-moon text-lg dark:hidden"></i>
                     <i class="fa-solid fa-sun text-lg hidden dark:block"></i>
+                </button>
+
+                <!-- Auth/Logout Button -->
+                <button id="authBtn" onclick="handleAuthAction()" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="เข้าสู่ระบบ/ออกจากระบบ">
+                    <i class="fa-solid fa-right-to-bracket text-lg" id="authIcon"></i>
                 </button>
 
                 <!-- Settings Button -->
@@ -80,17 +91,17 @@
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Sync / Config Warning Banner (Visible if disconnected) -->
+        <!-- Offline / Setup Warning Banner -->
         <div id="firebaseHelpBanner" class="hidden bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-4 text-sm text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-circle-exclamation text-amber-600 text-xl flex-shrink-0"></i>
                 <div>
-                    <span class="font-semibold">กำลังทำงานในโหมด Offline (Local Database):</span>
-                    <span> ข้อมูลบันทึกเฉพาะบนเครื่องนี้ หากต้องการซิงก์ข้อมูลข้ามอุปกรณ์ (เช่น PC <-> iPad) โปรดตั้งค่า Firebase Config และเปิดใช้งาน Anonymous Auth ในหน้าตั้งค่า</span>
+                    <span class="font-semibold">โปรดเข้าสู่ระบบเพื่อซิงก์ข้อมูล:</span>
+                    <span> หากต้องการแชร์และซิงก์ข้อมูลระหว่างคุณกับเพื่อน โปรดกดปุ่มล็อกอินที่มุมขวาบน</span>
                 </div>
             </div>
-            <button onclick="openModal('settingsModal')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-medium transition flex-shrink-0">
-                ตั้งค่า Firebase
+            <button onclick="openModal('loginModal')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition flex-shrink-0">
+                เข้าสู่ระบบ
             </button>
         </div>
 
@@ -232,7 +243,7 @@
                                 <th class="p-3.5 font-semibold text-right">ยอดรวมทั้งหมด</th>
                                 <th class="p-3.5 font-semibold text-right">ผ่อนชำระ/เดือน</th>
                                 <th class="p-3.5 font-semibold text-center">ระยะเวลาผ่อน</th>
-                                <th class="p-3.5 font-semibold text-center">เริ่มผ่อน - สิ้นสุด</th>
+                                <th class="p-3.5 font-semibold text-center">เริ่มผ่อน - สินสุด</th>
                                 <th class="p-3.5 font-semibold text-center">จัดการ</th>
                             </tr>
                         </thead>
@@ -252,6 +263,38 @@
         </div>
 
     </main>
+
+    <!-- Modal: Login / Authentication -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-indigo-600 dark:text-indigo-400 text-lg"></i>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">เข้าสู่ระบบ (Credit-Krapong)</h3>
+                </div>
+                <button onclick="closeModal('loginModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="handleLoginSubmit(event)" class="mt-4 space-y-4">
+                <div id="loginErrorMsg" class="hidden p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-800"></div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">อีเมลผู้ใช้งาน</label>
+                    <input type="email" id="loginEmail" required placeholder="name@example.com" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">รหัสผ่าน</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <button type="submit" id="loginSubmitBtn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal: Add / Edit Card -->
     <div id="addCardModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
@@ -348,7 +391,7 @@
                             <option value="7">กรกฎาคม (7)</option>
                             <option value="8">สิงหาคม (8)</option>
                             <option value="9">กันยายน (9)</option>
-                            <option value="10">ตุลานคร (10)</option>
+                            <option value="10">ตุลาคม (10)</option>
                             <option value="11">พฤศจิกายน (11)</option>
                             <option value="12">ธันวาคม (12)</option>
                         </select>
@@ -385,7 +428,7 @@
             
             <div class="mt-4 space-y-4 text-xs">
                 <p class="text-slate-600 dark:text-slate-400">
-                    ตั้งค่า Firebase Config เพื่อเชื่อมต่อฐานข้อมูลคลาวด์ออนไลน์ สำหรับใช้ซิงก์ข้อมูลระหว่าง PC และ iPad หรือมือถือแบบ Real-time
+                    ตั้งค่า Firebase Config เพื่อเชื่อมต่อฐานข้อมูลคลาวด์ออนไลน์ สำหรับใช้ซิงก์ข้อมูลข้ามอุปกรณ์แบบ Real-time
                 </p>
 
                 <div class="space-y-3">
@@ -420,6 +463,8 @@
         let cards = [];
         let items = [];
         let db = null;
+        let auth = null;
+        let currentUser = null;
         let isFirebaseConnected = false;
 
         // Sample initial seed data
@@ -433,7 +478,7 @@
             { id: 'item-2', cardId: 'card-2', name: 'MacBook Air M3', totalAmount: 42000, months: 12, startMonth: 3, startYear: 2026 }
         ];
 
-        /* Initialize Theme and Local Data on Load */
+        /* Initialize App on Load */
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
             loadLocalStorageData();
@@ -484,29 +529,82 @@
                         firebase.initializeApp(fbConfig);
                     }
                     db = firebase.firestore();
+                    auth = firebase.auth();
 
-                    // Anonymous Authentication for Firestore security rules compliance
-                    firebase.auth().signInAnonymously()
-                        .then(() => {
+                    // Listen for Authentication state changes
+                    auth.onAuthStateChanged((user) => {
+                        currentUser = user;
+                        if (user) {
                             updateSyncBadge('online', 'เชื่อมต่อ DB สำเร็จ');
                             document.getElementById('firebaseHelpBanner').classList.add('hidden');
+                            document.getElementById('userBadge').classList.remove('hidden');
+                            document.getElementById('userEmailText').innerText = user.email || 'ผู้ใช้ทั่วไป';
+                            document.getElementById('authIcon').className = 'fa-solid fa-right-from-bracket text-lg text-rose-500';
                             isFirebaseConnected = true;
                             attachFirestoreListeners();
-                        })
-                        .catch((error) => {
-                            console.warn("Firebase Auth Warning:", error);
-                            updateSyncBadge('error', 'สิทธิ์ DB ไม่ถูกต้อง');
+                        } else {
+                            updateSyncBadge('offline', 'ยังไม่เข้าสู่ระบบ (Local)');
                             document.getElementById('firebaseHelpBanner').classList.remove('hidden');
-                        });
+                            document.getElementById('userBadge').classList.add('hidden');
+                            document.getElementById('authIcon').className = 'fa-solid fa-right-to-bracket text-lg';
+                            isFirebaseConnected = false;
+                        }
+                    });
                 } catch (e) {
                     console.error("Firebase Init Error:", e);
-                    updateSyncBadge('offline', 'โหมด Offline (Local)');
+                    updateSyncBadge('error', 'ตั้งค่า Firebase ไม่ถูกต้อง');
                     document.getElementById('firebaseHelpBanner').classList.remove('hidden');
                 }
             } else {
-                updateSyncBadge('offline', 'โหมด Offline (Local)');
+                updateSyncBadge('offline', 'ยังไม่ตั้งค่า Firebase');
                 document.getElementById('firebaseHelpBanner').classList.remove('hidden');
             }
+        }
+
+        function handleAuthAction() {
+            if (currentUser) {
+                if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+                    auth.signOut().then(() => {
+                        location.reload();
+                    });
+                }
+            } else {
+                openModal('loginModal');
+            }
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errEl = document.getElementById('loginErrorMsg');
+            const submitBtn = document.getElementById('loginSubmitBtn');
+
+            errEl.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'กำลังตรวจสอบ...';
+
+            if (!auth) {
+                errEl.innerText = 'โปรดตั้งค่า Firebase Config ในหน้าตั้งค่าก่อนเข้าสู่ระบบ';
+                errEl.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'เข้าสู่ระบบ';
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    closeModal('loginModal');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'เข้าสู่ระบบ';
+                })
+                .catch((error) => {
+                    console.error("Login Error:", error);
+                    errEl.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือยังไม่ได้เปิดใช้อีเมลนี้ใน Firebase Console';
+                    errEl.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'เข้าสู่ระบบ';
+                });
         }
 
         function updateSyncBadge(status, text) {
@@ -530,7 +628,7 @@
         function attachFirestoreListeners() {
             if (!db) return;
             
-            // Listen for Realtime Cards Changes
+            // Realtime Cards Changes
             db.collection('cards').onSnapshot(snapshot => {
                 const cloudCards = [];
                 snapshot.forEach(doc => cloudCards.push({ id: doc.id, ...doc.data() }));
@@ -541,7 +639,7 @@
                 }
             }, err => console.warn('Firestore Cards Listener Error:', err));
 
-            // Listen for Realtime Items Changes
+            // Realtime Items Changes
             db.collection('items').onSnapshot(snapshot => {
                 const cloudItems = [];
                 snapshot.forEach(doc => cloudItems.push({ id: doc.id, ...doc.data() }));
@@ -659,7 +757,6 @@
                 const card = cards.find(c => c.id === item.cardId) || { name: 'ไม่พบข้อมูลบัตร' };
                 const monthlyPay = item.totalAmount / item.months;
                 
-                // End month/year
                 const endMonthTotal = parseInt(item.startMonth) + parseInt(item.months) - 1;
                 const endYearOffset = Math.floor((endMonthTotal - 1) / 12);
                 const endMonth = ((endMonthTotal - 1) % 12) + 1;
