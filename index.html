@@ -28,6 +28,9 @@
     <!-- Chart.js for Donut Visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- SheetJS Library for Excel Export/Import -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -92,7 +95,7 @@
                 </button>
 
                 <!-- Settings Button -->
-                <button onclick="openModal('settingsModal')" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="ตั้งค่า Firebase">
+                <button onclick="openModal('settingsModal')" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="ตั้งค่าระบบ">
                     <i class="fa-solid fa-gear text-lg"></i>
                 </button>
             </div>
@@ -162,8 +165,8 @@
         </div>
 
         <!-- Navigation Tabs & Action Bar -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700 pb-2">
-            <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto custom-scrollbar pb-2 sm:pb-0">
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+            <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto custom-scrollbar pb-2 lg:pb-0">
                 <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-indigo-600 text-white shadow-sm">
                     <i class="fa-solid fa-chart-pie mr-2"></i>สรุปแยกตามบัตร & หมวดหมู่
                 </button>
@@ -178,12 +181,21 @@
                 </button>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="flex items-center gap-2">
-                <button onclick="requireLogin(() => openModal('addCardModal'))" class="flex-1 sm:flex-none px-3.5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <!-- Action Buttons Group (Included Excel Export/Import) -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Hidden Excel File Input -->
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls" onchange="importFromExcel(event)" class="hidden">
+                
+                <button onclick="requireLogin(() => triggerExcelImport())" class="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="นำเข้าข้อมูลจากไฟล์ Excel">
+                    <i class="fa-solid fa-file-import text-emerald-600"></i> นำเข้า Excel
+                </button>
+                <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm" title="ส่งออกข้อมูลเป็นไฟล์ Excel">
+                    <i class="fa-solid fa-file-excel"></i> ส่งออก Excel
+                </button>
+                <button onclick="requireLogin(() => openAddCardModal())" class="px-3.5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
                     <i class="fa-solid fa-plus"></i> เพิ่มบัตร
                 </button>
-                <button onclick="requireLogin(() => openModal('addItemModal'))" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-1.5">
+                <button onclick="requireLogin(() => openAddItemModal())" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5">
                     <i class="fa-solid fa-plus"></i> เพิ่มรายการชำระ
                 </button>
             </div>
@@ -199,7 +211,7 @@
                         <i class="fa-solid fa-credit-card text-indigo-600 dark:text-indigo-400 text-lg"></i>
                         <div>
                             <h2 class="text-base font-bold text-slate-800 dark:text-white">ตารางสรุปยอดชำระแยกตามบัตรเครดิต รายเดือน</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">คำนวณรอบตัดบิลตามวันตัดรอบของบัตรแต่ละใบให้อัตโนมัติ</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">คำนวณรอบตัดบิลตามวันตัดรอบของบัตรแต่ละใบให้อัตโนมัติ (รองรับบัตร 35+ ใบ)</p>
                         </div>
                     </div>
 
@@ -227,11 +239,11 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto custom-scrollbar">
+                <div class="overflow-x-auto custom-scrollbar max-h-[600px]">
                     <table class="w-full text-left border-collapse text-xs sm:text-sm">
                         <thead>
-                            <tr class="bg-slate-900 text-slate-200 border-b border-slate-800 uppercase tracking-wider">
-                                <th class="p-3 sm:p-4 font-semibold sticky left-0 bg-slate-900 z-10">ชื่อบัตรเครดิต</th>
+                            <tr class="bg-slate-900 text-slate-200 border-b border-slate-800 uppercase tracking-wider sticky top-0 z-20">
+                                <th class="p-3 sm:p-4 font-semibold sticky left-0 bg-slate-900 z-30">ชื่อบัตรเครดิต</th>
                                 <th class="p-3 font-semibold text-center">ตัดรอบ</th>
                                 <th class="p-3 font-semibold text-center">ครบกำหนด</th>
                                 <th class="p-3 font-semibold text-right">ม.ค.</th>
@@ -252,7 +264,7 @@
                         <tbody id="cardMonthlyTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
                             <!-- Injected dynamically -->
                         </tbody>
-                        <tfoot id="cardMonthlyTableFoot" class="bg-slate-100 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-600">
+                        <tfoot id="cardMonthlyTableFoot" class="bg-slate-100 dark:bg-slate-800/80 font-bold border-t-2 border-slate-300 dark:border-slate-600 sticky bottom-0 z-20">
                             <!-- Injected dynamically for total summary -->
                         </tfoot>
                     </table>
@@ -402,20 +414,20 @@
                         </div>
 
                         <!-- Card Filter -->
-                        <select id="itemCardFilter" onchange="renderItemsList()" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                        <select id="itemCardFilter" onchange="renderItemsList()" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 max-w-[160px]">
                             <option value="ALL">-- กรองทุกบัตร --</option>
                         </select>
 
                         <!-- Category Filter -->
-                        <select id="itemCatFilter" onchange="renderItemsList()" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                        <select id="itemCatFilter" onchange="renderItemsList()" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 max-w-[160px]">
                             <option value="ALL">-- กรองทุกหมวดหมู่ --</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto custom-scrollbar">
+                <div class="overflow-x-auto custom-scrollbar max-h-[600px]">
                     <table class="w-full text-left text-xs sm:text-sm">
-                        <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase">
+                        <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase sticky top-0 z-10">
                             <tr>
                                 <th class="p-3.5 font-semibold">วันที่ซื้อ</th>
                                 <th class="p-3.5 font-semibold">รายการ / ร้านค้า</th>
@@ -440,7 +452,7 @@
         <!-- TAB 4: Cards List View -->
         <div id="tabContent-cards" class="tab-content hidden space-y-4">
             <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <!-- Cards injected dynamically -->
+                <!-- Cards injected dynamically (Unlimited cards support 35+) -->
             </div>
         </div>
 
@@ -483,7 +495,7 @@
         </div>
     </div>
 
-    <!-- Modal 2: Add / Edit Card -->
+    <!-- Modal 2: Add / Edit Card (Fixed overwrite bug) -->
     <div id="addCardModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
@@ -493,7 +505,7 @@
                 </button>
             </div>
             <form id="cardForm" onsubmit="handleSaveCard(event)" class="mt-4 space-y-4">
-                <input type="hidden" id="cardId">
+                <input type="hidden" id="cardId" value="">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อบัตรเครดิต *</label>
                     <input type="text" id="cardName" required placeholder="เช่น KTC Platinum, SCB Beyond, UOB Premier" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
@@ -521,6 +533,9 @@
                         <option value="from-rose-500 to-red-700">Crimson Red</option>
                         <option value="from-emerald-600 to-teal-800">Emerald Green</option>
                         <option value="from-amber-500 to-orange-600">Gold Amber</option>
+                        <option value="from-cyan-600 to-blue-800">Cyan Oceanic</option>
+                        <option value="from-fuchsia-600 to-pink-700">Fuchsia Pink</option>
+                        <option value="from-teal-600 to-emerald-800">Teal Forest</option>
                     </select>
                 </div>
 
@@ -532,7 +547,7 @@
         </div>
     </div>
 
-    <!-- Modal 3: Add / Edit Item (With Transaction Date AND Auto-Set Start Month/Year Selectors) -->
+    <!-- Modal 3: Add / Edit Item -->
     <div id="addItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
@@ -542,7 +557,7 @@
                 </button>
             </div>
             <form id="itemForm" onsubmit="handleSaveItem(event)" class="mt-4 space-y-4">
-                <input type="hidden" id="itemId">
+                <input type="hidden" id="itemId" value="">
                 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อรายการ / สินค้า *</label>
@@ -553,7 +568,7 @@
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">หมวดหมู่สินค้า *</label>
-                            <button type="button" onclick="openModal('manageCategoriesModal')" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline"><i class="fa-solid fa-plus-circle mr-1"></i>จัดการ</button>
+                            <button type="button" onclick="openModal('manageCategoriesModal')" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold"><i class="fa-solid fa-plus-circle mr-1"></i>จัดการ</button>
                         </div>
                         <select id="itemCategory" required class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                             <!-- Populated dynamically -->
@@ -681,7 +696,7 @@
         </div>
     </div>
 
-    <!-- Modal 5: Settings & Firebase Config -->
+    <!-- Modal 5: Settings & Firebase Config & Backup -->
     <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
@@ -692,6 +707,25 @@
             </div>
             
             <div class="mt-4 space-y-4 text-xs">
+                <!-- Backup & Restore Excel Section -->
+                <div class="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 space-y-2">
+                    <div class="font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i>
+                        <span>สำรองและฟื้นฟูข้อมูลด้วย Excel (.xlsx)</span>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">
+                        สามารถส่งออกข้อมูลทั้งหมดเก็บเป็นไฟล์ Excel หรือนำเข้าไฟล์ที่เคยบันทึกไว้กลับเข้ามาในระบบ
+                    </p>
+                    <div class="flex items-center gap-2 pt-1">
+                        <button onclick="triggerExcelImport()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition shadow-sm flex items-center gap-1">
+                            <i class="fa-solid fa-file-import"></i> นำเข้า Excel
+                        </button>
+                        <button onclick="exportToExcel()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition shadow-sm flex items-center gap-1">
+                            <i class="fa-solid fa-file-excel"></i> ส่งออก Excel
+                        </button>
+                    </div>
+                </div>
+
                 <p class="text-slate-600 dark:text-slate-400">
                     ตั้งค่า Firebase Config เพื่อเชื่อมต่อฐานข้อมูลคลาวด์ออนไลน์ สำหรับใช้ซิงก์ข้อมูลข้ามอุปกรณ์แบบ Real-time
                 </p>
@@ -763,7 +797,6 @@
             { id: 'item-3', cardId: 'card-3', name: 'จองโรงแรมที่พักภูเก็ต', category: 'ท่องเที่ยว/โรงแรม', transactionDate: '2026-07-10', startMonth: 8, startYear: 2026, totalAmount: 24000, months: 6, payType: 'installment' }
         ];
 
-        /* Initialize Application */
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
             loadLocalStorageData();
@@ -825,7 +858,6 @@
             localStorage.setItem('credit_krapong_cats', JSON.stringify(categories));
         }
 
-        /* Firebase Initialization */
         function initFirebase() {
             const savedConfig = localStorage.getItem('credit_krapong_firebase_cfg');
             let fbConfig = savedConfig ? JSON.parse(savedConfig) : null;
@@ -867,7 +899,7 @@
 
         function requireLogin(callbackAction) {
             if (!currentUser) {
-                alert('โปรดเข้าสู่ระบบก่อนทำการเพิ่ม แก้ไข หรือลบข้อมูล');
+                alert('โปรดเข้าสู่ระบบก่อนทำการเพิ่ม แก้ไข นำเข้า หรือลบข้อมูล');
                 openModal('loginModal');
             } else {
                 callbackAction();
@@ -975,9 +1007,6 @@
             }
         }
 
-        /**
-         * CORE ALGORITHM: Calculates first payment month and year based on Credit Card's Cut-off (Billing) Day.
-         */
         function calculateFirstBillingMonth(txDateStr, cardId) {
             if (!txDateStr) return { startMonth: 1, startYear: 2026 };
 
@@ -1015,7 +1044,6 @@
             return calculateFirstBillingMonth(item.transactionDate, item.cardId);
         }
 
-        /* Update dynamic hint box and auto-update dropdowns in addItemModal */
         function updateFirstBillingPreview() {
             const txDate = document.getElementById('itemTransactionDate').value;
             const cardId = document.getElementById('itemCardId').value;
@@ -1034,7 +1062,6 @@
             document.getElementById('itemStartYear').value = startYear.toString();
         }
 
-        /* Render All UI Views */
         function renderAllViews() {
             renderMetrics();
             renderCardMonthlyAnalytics();
@@ -1485,14 +1512,32 @@
             }
         }
 
+        function openAddCardModal() {
+            document.getElementById('cardId').value = ''; // Always clear ID
+            document.getElementById('cardForm').reset();
+            document.getElementById('cardModalTitle').innerText = 'เพิ่มบัตรเครดิตใหม่';
+            openModal('addCardModal');
+        }
+
+        function openAddItemModal() {
+            document.getElementById('itemId').value = ''; // Always clear ID
+            document.getElementById('itemForm').reset();
+            document.getElementById('itemModalTitle').innerText = 'เพิ่มรายการชำระเงิน';
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('itemTransactionDate').value = today;
+            updateFirstBillingPreview();
+            openModal('addItemModal');
+        }
+
         function handleSaveCard(e) {
             e.preventDefault();
             if (!currentUser) return alert('โปรดเข้าสู่ระบบก่อนทำการบันทึกข้อมูล');
 
-            const id = document.getElementById('cardId').value || 'card-' + Date.now();
+            // Generate unique card ID if creating new card
+            const id = document.getElementById('cardId').value || ('card-' + Date.now() + '-' + Math.floor(Math.random() * 10000));
             const cardObj = {
                 id,
-                name: document.getElementById('cardName').value,
+                name: document.getElementById('cardName').value.trim(),
                 limit: parseFloat(document.getElementById('cardLimit').value),
                 billingDay: parseInt(document.getElementById('cardBillingDay').value) || 20,
                 dueDate: parseInt(document.getElementById('cardDueDate').value) || 10,
@@ -1500,8 +1545,11 @@
             };
 
             const idx = cards.findIndex(c => c.id === id);
-            if (idx >= 0) cards[idx] = cardObj;
-            else cards.push(cardObj);
+            if (idx >= 0) {
+                cards[idx] = cardObj;
+            } else {
+                cards.push(cardObj);
+            }
 
             saveLocalStorageData();
             syncToFirestore('cards', id, cardObj);
@@ -1513,12 +1561,13 @@
             e.preventDefault();
             if (!currentUser) return alert('โปรดเข้าสู่ระบบก่อนทำการบันทึกข้อมูล');
 
-            const id = document.getElementById('itemId').value || 'item-' + Date.now();
+            // Generate unique item ID if creating new item
+            const id = document.getElementById('itemId').value || ('item-' + Date.now() + '-' + Math.floor(Math.random() * 10000));
             const payType = document.querySelector('input[name="paymentType"]:checked').value;
             
             const itemObj = {
                 id,
-                name: document.getElementById('itemName').value,
+                name: document.getElementById('itemName').value.trim(),
                 category: document.getElementById('itemCategory').value,
                 cardId: document.getElementById('itemCardId').value,
                 transactionDate: document.getElementById('itemTransactionDate').value,
@@ -1568,6 +1617,7 @@
             document.getElementById('cardBillingDay').value = card.billingDay;
             document.getElementById('cardDueDate').value = card.dueDate;
             document.getElementById('cardColor').value = card.color;
+            document.getElementById('cardModalTitle').innerText = 'แก้ไขข้อมูลบัตรเครดิต';
             openModal('addCardModal');
         }
 
@@ -1592,8 +1642,172 @@
             document.getElementById('itemStartMonth').value = startMonth.toString();
             document.getElementById('itemStartYear').value = startYear.toString();
 
+            document.getElementById('itemModalTitle').innerText = 'แก้ไขรายการชำระเงิน';
             updateFirstBillingPreview();
             openModal('addItemModal');
+        }
+
+        function exportToExcel() {
+            if (cards.length === 0 && items.length === 0) {
+                return alert('ยังไม่มีข้อมูลสำหรับส่งออกเป็น Excel');
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+
+                // Sheet 1: Items
+                const itemsExportData = items.map((i, idx) => {
+                    const card = cards.find(c => c.id === i.cardId) || { name: 'ไม่ระบุ' };
+                    return {
+                        'ลำดับ': idx + 1,
+                        'ID': i.id,
+                        'วันที่ทำรายการ': i.transactionDate || '',
+                        'รายการ / ร้านค้า': i.name,
+                        'หมวดหมู่': i.category || 'อื่นๆ',
+                        'บัตรเครดิต': card.name,
+                        'ยอดรวมทั้งหมด (บาท)': i.totalAmount,
+                        'รูปแบบชำระ': i.payType === 'full' ? 'ชำระเต็มจำนวน' : 'ผ่อนชำระ',
+                        'จำนวนงวด (เดือน)': i.months,
+                        'ยอดผ่อน/เดือน (บาท)': Math.round(i.totalAmount / i.months),
+                        'เดือนที่เริ่มจ่าย': i.startMonth || '',
+                        'ปีที่เริ่มจ่าย': i.startYear || ''
+                    };
+                });
+                const wsItems = XLSX.utils.json_to_sheet(itemsExportData);
+                XLSX.utils.book_append_sheet(wb, wsItems, "รายการชำระเงิน");
+
+                // Sheet 2: Cards
+                const cardsExportData = cards.map((c, idx) => ({
+                    'ลำดับ': idx + 1,
+                    'ID': c.id,
+                    'ชื่อบัตรเครดิต': c.name,
+                    'วงเงินบัตร (บาท)': c.limit,
+                    'วันสรุปยอด (Cut-off)': c.billingDay,
+                    'วันครบกำหนดชำระ': c.dueDate,
+                    'ธีมสี': c.color
+                }));
+                const wsCards = XLSX.utils.json_to_sheet(cardsExportData);
+                XLSX.utils.book_append_sheet(wb, wsCards, "บัตรเครดิต");
+
+                // Sheet 3: Categories
+                const catsExportData = categories.map((cat, idx) => ({
+                    'ลำดับ': idx + 1,
+                    'ชื่อหมวดหมู่': cat.name,
+                    'รหัสสี': cat.color
+                }));
+                const wsCats = XLSX.utils.json_to_sheet(catsExportData);
+                XLSX.utils.book_append_sheet(wb, wsCats, "หมวดหมู่สินค้า");
+
+                // Save Excel File
+                const fileName = `Credit_Krapong_Backup_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+            } catch (e) {
+                console.error("Excel Export Error:", e);
+                alert('เกิดข้อผิดพลาดในการสร้างไฟล์ Excel');
+            }
+        }
+
+        function triggerExcelImport() {
+            document.getElementById('excelFileInput').click();
+        }
+
+        function importFromExcel(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    let importedItemsCount = 0;
+                    let importedCardsCount = 0;
+
+                    // Import Sheet: Cards
+                    if (workbook.SheetNames.includes("บัตรเครดิต")) {
+                        const wsCards = workbook.Sheets["บัตรเครดิต"];
+                        const rawCards = XLSX.utils.sheet_to_json(wsCards);
+                        rawCards.forEach(row => {
+                            const id = row['ID'] || ('card-' + Date.now() + '-' + Math.floor(Math.random() * 10000));
+                            const cardObj = {
+                                id,
+                                name: row['ชื่อบัตรเครดิต'] || 'บัตรนำเข้า',
+                                limit: parseFloat(row['วงเงินบัตร (บาท)']) || 50000,
+                                billingDay: parseInt(row['วันสรุปยอด (Cut-off)']) || 20,
+                                dueDate: parseInt(row['วันครบกำหนดชำระ']) || 10,
+                                color: row['ธีมสี'] || 'from-indigo-600 to-blue-700'
+                            };
+                            const idx = cards.findIndex(c => c.id === id || c.name === cardObj.name);
+                            if (idx >= 0) cards[idx] = cardObj;
+                            else cards.push(cardObj);
+
+                            syncToFirestore('cards', cardObj.id, cardObj);
+                            importedCardsCount++;
+                        });
+                    }
+
+                    // Import Sheet: Items
+                    if (workbook.SheetNames.includes("รายการชำระเงิน")) {
+                        const wsItems = workbook.Sheets["รายการชำระเงิน"];
+                        const rawItems = XLSX.utils.sheet_to_json(wsItems);
+                        rawItems.forEach(row => {
+                            const cardName = row['บัตรเครดิต'];
+                            const matchedCard = cards.find(c => c.name === cardName);
+                            const cardId = matchedCard ? matchedCard.id : (cards[0]?.id || 'card-1');
+
+                            const id = row['ID'] || ('item-' + Date.now() + '-' + Math.floor(Math.random() * 10000));
+                            const payTypeStr = row['รูปแบบชำระ'];
+                            const payType = payTypeStr === 'ชำระเต็มจำนวน' ? 'full' : 'installment';
+
+                            const itemObj = {
+                                id,
+                                cardId,
+                                name: row['รายการ / ร้านค้า'] || 'รายการนำเข้า',
+                                category: row['หมวดหมู่'] || 'อื่นๆ',
+                                transactionDate: row['วันที่ทำรายการ'] || new Date().toISOString().split('T')[0],
+                                totalAmount: parseFloat(row['ยอดรวมทั้งหมด (บาท)']) || 0,
+                                payType: payType,
+                                months: payType === 'full' ? 1 : (parseInt(row['จำนวนงวด (เดือน)']) || 1),
+                                startMonth: parseInt(row['เดือนที่เริ่มจ่าย']) || 1,
+                                startYear: parseInt(row['ปีที่เริ่มจ่าย']) || 2026
+                            };
+
+                            const idx = items.findIndex(i => i.id === id);
+                            if (idx >= 0) items[idx] = itemObj;
+                            else items.push(itemObj);
+
+                            syncToFirestore('items', itemObj.id, itemObj);
+                            importedItemsCount++;
+                        });
+                    }
+
+                    // Import Sheet: Categories
+                    if (workbook.SheetNames.includes("หมวดหมู่สินค้า")) {
+                        const wsCats = workbook.Sheets["หมวดหมู่สินค้า"];
+                        const rawCats = XLSX.utils.sheet_to_json(wsCats);
+                        rawCats.forEach(row => {
+                            const name = row['ชื่อหมวดหมู่'];
+                            const color = row['รหัสสี'] || '#8b5cf6';
+                            if (name && !categories.some(c => c.name === name)) {
+                                const catObj = { name, color };
+                                categories.push(catObj);
+                                syncToFirestore('categories', name, catObj);
+                            }
+                        });
+                    }
+
+                    saveLocalStorageData();
+                    renderAllViews();
+                    alert(`นำเข้าข้อมูลจาก Excel สำเร็จ!\n- บัตรเครดิต: ${importedCardsCount} ใบ\n- รายการชำระเงิน: ${importedItemsCount} รายการ`);
+
+                } catch (err) {
+                    console.error("Excel Import Error:", err);
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel โปรดตรวจสอบรูปแบบไฟล์');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            e.target.value = ''; // Reset input
         }
 
         function switchTab(tab) {
@@ -1612,8 +1826,12 @@
 
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
-            if (id === 'addCardModal') document.getElementById('cardForm').reset();
+            if (id === 'addCardModal') {
+                document.getElementById('cardId').value = '';
+                document.getElementById('cardForm').reset();
+            }
             if (id === 'addItemModal') {
+                document.getElementById('itemId').value = '';
                 document.getElementById('itemForm').reset();
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('itemTransactionDate').value = today;
