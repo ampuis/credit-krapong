@@ -67,7 +67,7 @@
                 <!-- Sync Status Indicator Badge -->
                 <div id="syncBadge" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                     <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    <span id="syncText">กำลังเชื่อมต่อ DB...</span>
+                    <span id="syncText">ยังไม่ได้เข้าสู่ระบบ</span>
                 </div>
 
                 <!-- Theme Switcher Button -->
@@ -91,17 +91,17 @@
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Offline / Setup Warning Banner -->
-        <div id="firebaseHelpBanner" class="hidden bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-4 text-sm text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <!-- Offline / Login Alert Banner -->
+        <div id="firebaseHelpBanner" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-4 text-sm text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-                <i class="fa-solid fa-circle-exclamation text-amber-600 text-xl flex-shrink-0"></i>
+                <i class="fa-solid fa-lock text-amber-600 text-xl flex-shrink-0"></i>
                 <div>
-                    <span class="font-semibold">โปรดเข้าสู่ระบบเพื่อซิงก์ข้อมูล:</span>
-                    <span> หากต้องการแชร์และซิงก์ข้อมูลระหว่างคุณกับเพื่อน โปรดกดปุ่มล็อกอินที่มุมขวาบน</span>
+                    <span class="font-bold">โหมดดูอย่างเดียว (Read-Only):</span>
+                    <span> โปรดเข้าสู่ระบบเพื่อเพิ่ม แก้ไข หรือซิงก์ข้อมูลร่วมกันระหว่างคุณกับเพื่อน</span>
                 </div>
             </div>
-            <button onclick="openModal('loginModal')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition flex-shrink-0">
-                เข้าสู่ระบบ
+            <button onclick="openModal('loginModal')" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition flex-shrink-0 shadow-sm">
+                <i class="fa-solid fa-right-to-bracket mr-1"></i> เข้าสู่ระบบ
             </button>
         </div>
 
@@ -117,14 +117,17 @@
                 <div class="text-xs text-slate-400 dark:text-slate-500 mt-1" id="statCardCount">0 บัตรเครดิต</div>
             </div>
 
-            <!-- Card 2: Current Outstanding Balance -->
+            <!-- Card 2: Total Spent Breakdown -->
             <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
                 <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
                     <span class="text-xs font-semibold uppercase tracking-wider">ยอดใช้วงเงินรวม</span>
                     <i class="fa-solid fa-credit-card text-rose-500 text-lg"></i>
                 </div>
                 <div id="statTotalSpent" class="text-2xl font-bold text-rose-600 dark:text-rose-400">฿0.00</div>
-                <div class="text-xs text-slate-400 dark:text-slate-500 mt-1" id="statSpentPercent">0% ของวงเงินรวม</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex justify-between" id="statSpentBreakdown">
+                    <span>ผ่อนชำระ: ฿0</span>
+                    <span>เต็มจำนวน: ฿0</span>
+                </div>
             </div>
 
             <!-- Card 3: Remaining Credit Balance -->
@@ -134,10 +137,10 @@
                     <i class="fa-solid fa-piggy-bank text-emerald-500 text-lg"></i>
                 </div>
                 <div id="statTotalRemaining" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">฿0.00</div>
-                <div class="text-xs text-slate-400 dark:text-slate-500 mt-1">พร้อมใช้งาน</div>
+                <div class="text-xs text-slate-400 dark:text-slate-500 mt-1" id="statSpentPercent">พร้อมใช้งาน</div>
             </div>
 
-            <!-- Card 4: Current Month Installment Obligation -->
+            <!-- Card 4: Current Month Obligation -->
             <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
                 <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
                     <span class="text-xs font-semibold uppercase tracking-wider">ยอดต้องชำระเดือนนี้</span>
@@ -155,20 +158,20 @@
                     <i class="fa-solid fa-calendar-days mr-2"></i>แผนผ่อนชำระ 5 ปี (2026-2030)
                 </button>
                 <button onclick="switchTab('items')" id="tabBtn-items" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800">
-                    <i class="fa-solid fa-list-check mr-2"></i>รายการผ่อนชำระ
+                    <i class="fa-solid fa-list-check mr-2"></i>รายการชำระเงิน
                 </button>
                 <button onclick="switchTab('cards')" id="tabBtn-cards" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800">
                     <i class="fa-solid fa-credit-card mr-2"></i>จัดการบัตรเครดิต
                 </button>
             </div>
 
-            <!-- Action Buttons -->
+            <!-- Action Buttons (Guarded by Login Check) -->
             <div class="flex items-center gap-2">
-                <button onclick="openModal('addCardModal')" class="flex-1 sm:flex-none px-3.5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                <button onclick="requireLogin(() => openModal('addCardModal'))" class="flex-1 sm:flex-none px-3.5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-plus"></i> เพิ่มบัตร
                 </button>
-                <button onclick="openModal('addItemModal')" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-plus"></i> เพิ่มรายการผ่อน
+                <button onclick="requireLogin(() => openModal('addItemModal'))" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> เพิ่มรายการชำระ
                 </button>
             </div>
         </div>
@@ -223,11 +226,11 @@
             </div>
         </div>
 
-        <!-- TAB 2: Items List (Installment Transactions) -->
+        <!-- TAB 2: Items List (Transactions) -->
         <div id="tabContent-items" class="tab-content hidden space-y-4">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <h2 class="text-base font-bold text-slate-800 dark:text-white">รายการผ่อนชำระทั้งหมด</h2>
+                    <h2 class="text-base font-bold text-slate-800 dark:text-white">รายการชำระเงินทั้งหมด</h2>
                     <div class="relative max-w-xs w-full">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                         <input type="text" id="itemSearchInput" oninput="renderItemsList()" placeholder="ค้นหารายการ..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
@@ -239,11 +242,12 @@
                         <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase">
                             <tr>
                                 <th class="p-3.5 font-semibold">ชื่อรายการ / สินค้า</th>
+                                <th class="p-3.5 font-semibold">ประเภทชำระ</th>
                                 <th class="p-3.5 font-semibold">บัตรเครดิตที่ใช้</th>
                                 <th class="p-3.5 font-semibold text-right">ยอดรวมทั้งหมด</th>
-                                <th class="p-3.5 font-semibold text-right">ผ่อนชำระ/เดือน</th>
-                                <th class="p-3.5 font-semibold text-center">ระยะเวลาผ่อน</th>
-                                <th class="p-3.5 font-semibold text-center">เริ่มผ่อน - สินสุด</th>
+                                <th class="p-3.5 font-semibold text-right">ชำระ/เดือน</th>
+                                <th class="p-3.5 font-semibold text-center">ระยะเวลา</th>
+                                <th class="p-3.5 font-semibold text-center">ช่วงเวลาชำระ</th>
                                 <th class="p-3.5 font-semibold text-center">จัดการ</th>
                             </tr>
                         </thead>
@@ -281,11 +285,11 @@
                 <div id="loginErrorMsg" class="hidden p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-800"></div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">อีเมลผู้ใช้งาน</label>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">อีเมลผู้ใช้งาน *</label>
                     <input type="email" id="loginEmail" required placeholder="name@example.com" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">รหัสผ่าน</label>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">รหัสผ่าน *</label>
                     <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                 </div>
 
@@ -345,11 +349,11 @@
         </div>
     </div>
 
-    <!-- Modal: Add / Edit Installment Item -->
+    <!-- Modal: Add / Edit Item (Enhanced with Pay Type) -->
     <div id="addItemModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
-                <h3 id="itemModalTitle" class="text-lg font-bold text-slate-800 dark:text-white">เพิ่มรายการผ่อนชำระ</h3>
+                <h3 id="itemModalTitle" class="text-lg font-bold text-slate-800 dark:text-white">เพิ่มรายการชำระเงิน</h3>
                 <button onclick="closeModal('addItemModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -358,7 +362,28 @@
                 <input type="hidden" id="itemId">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อรายการ / สินค้า *</label>
-                    <input type="text" id="itemName" required placeholder="เช่น iPhone 16 Pro, ตู้เย็น, ประกันภัย" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="itemName" required placeholder="เช่น iPhone 16 Pro, ตู้เย็น, เติมน้ำมัน" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <!-- Payment Type Selection (Full vs Installment) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">รูปแบบการชำระเงิน *</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <input type="radio" name="paymentType" value="installment" checked onchange="togglePayTypeFields()" class="text-indigo-600 focus:ring-indigo-500">
+                            <div class="text-xs">
+                                <div class="font-bold text-slate-800 dark:text-white">ผ่อนชำระ</div>
+                                <div class="text-slate-400">แบ่งจ่ายหลายงวด</div>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                            <input type="radio" name="paymentType" value="full" onchange="togglePayTypeFields()" class="text-indigo-600 focus:ring-indigo-500">
+                            <div class="text-xs">
+                                <div class="font-bold text-slate-800 dark:text-white">ชำระเต็มจำนวน</div>
+                                <div class="text-slate-400">จ่ายจบในงวดเดียว</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -369,18 +394,18 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ราคาทั้งหมด (บาท) *</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ยอดรวมทั้งหมด (บาท) *</label>
                         <input type="number" step="0.01" id="itemTotalAmount" required placeholder="36000" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
-                    <div>
+                    <div id="itemMonthsContainer">
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">จำนวนงวด (เดือน) *</label>
-                        <input type="number" min="1" max="60" id="itemMonths" required placeholder="10" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                        <input type="number" min="1" max="60" id="itemMonths" value="10" required placeholder="10" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เดือนที่เริ่มผ่อน *</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เดือนที่ชำระ *</label>
                         <select id="itemStartMonth" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                             <option value="1">มกราคม (1)</option>
                             <option value="2">กุมภาพันธ์ (2)</option>
@@ -397,7 +422,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ปีที่เริ่มผ่อน *</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ปีที่ชำระ *</label>
                         <select id="itemStartYear" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                             <option value="2026">2026</option>
                             <option value="2027">2027</option>
@@ -474,8 +499,9 @@
         ];
 
         const sampleItems = [
-            { id: 'item-1', cardId: 'card-1', name: 'iPhone 16 Pro Max', totalAmount: 48000, months: 10, startMonth: 1, startYear: 2026 },
-            { id: 'item-2', cardId: 'card-2', name: 'MacBook Air M3', totalAmount: 42000, months: 12, startMonth: 3, startYear: 2026 }
+            { id: 'item-1', cardId: 'card-1', name: 'iPhone 16 Pro Max', totalAmount: 48000, months: 10, startMonth: 1, startYear: 2026, payType: 'installment' },
+            { id: 'item-2', cardId: 'card-2', name: 'MacBook Air M3', totalAmount: 42000, months: 12, startMonth: 3, startYear: 2026, payType: 'installment' },
+            { id: 'item-3', cardId: 'card-1', name: 'เติมน้ำมัน / ซื้อของซูเปอร์', totalAmount: 3500, months: 1, startMonth: 7, startYear: 2026, payType: 'full' }
         ];
 
         /* Initialize App on Load */
@@ -484,6 +510,7 @@
             loadLocalStorageData();
             initFirebase();
             renderAllViews();
+            loadFirebaseConfigToModal();
         });
 
         function initTheme() {
@@ -535,7 +562,7 @@
                     auth.onAuthStateChanged((user) => {
                         currentUser = user;
                         if (user) {
-                            updateSyncBadge('online', 'เชื่อมต่อ DB สำเร็จ');
+                            updateSyncBadge('online', 'เข้าสู่ระบบแล้ว');
                             document.getElementById('firebaseHelpBanner').classList.add('hidden');
                             document.getElementById('userBadge').classList.remove('hidden');
                             document.getElementById('userEmailText').innerText = user.email || 'ผู้ใช้ทั่วไป';
@@ -558,6 +585,15 @@
             } else {
                 updateSyncBadge('offline', 'ยังไม่ตั้งค่า Firebase');
                 document.getElementById('firebaseHelpBanner').classList.remove('hidden');
+            }
+        }
+
+        function requireLogin(callbackAction) {
+            if (!currentUser) {
+                alert('โปรดเข้าสู่ระบบก่อนทำการเพิ่ม แก้ไข หรือลบข้อมูล เพื่อความปลอดภัยของข้อมูล');
+                openModal('loginModal');
+            } else {
+                callbackAction();
             }
         }
 
@@ -652,13 +688,13 @@
         }
 
         function syncToFirestore(collection, id, data) {
-            if (isFirebaseConnected && db) {
+            if (isFirebaseConnected && db && currentUser) {
                 db.collection(collection).doc(id).set(data, { merge: true }).catch(err => console.error("Sync Error:", err));
             }
         }
 
         function deleteFromFirestore(collection, id) {
-            if (isFirebaseConnected && db) {
+            if (isFirebaseConnected && db && currentUser) {
                 db.collection(collection).doc(id).delete().catch(err => console.error("Delete Error:", err));
             }
         }
@@ -673,7 +709,21 @@
 
         function renderMetrics() {
             const totalLimit = cards.reduce((acc, c) => acc + parseFloat(c.limit || 0), 0);
-            const totalSpent = items.reduce((acc, i) => acc + parseFloat(i.totalAmount || 0), 0);
+            
+            let totalSpent = 0;
+            let totalInstallmentSpent = 0;
+            let totalFullSpent = 0;
+
+            items.forEach(i => {
+                const amt = parseFloat(i.totalAmount || 0);
+                totalSpent += amt;
+                if (i.payType === 'full' || i.months === 1) {
+                    totalFullSpent += amt;
+                } else {
+                    totalInstallmentSpent += amt;
+                }
+            });
+
             const remaining = totalLimit - totalSpent;
 
             // Current year/month calculations (July 2026)
@@ -698,10 +748,15 @@
             document.getElementById('statCardCount').innerText = `${cards.length} บัตรเครดิต`;
 
             document.getElementById('statTotalSpent').innerText = '฿' + totalSpent.toLocaleString('th-TH', {minimumFractionDigits: 2});
-            const spentPct = totalLimit > 0 ? ((totalSpent / totalLimit) * 100).toFixed(1) : 0;
-            document.getElementById('statSpentPercent').innerText = `${spentPct}% ของวงเงินรวม`;
+            document.getElementById('statSpentBreakdown').innerHTML = `
+                <span>ผ่อน: <b>฿${Math.round(totalInstallmentSpent).toLocaleString()}</b></span>
+                <span>เต็ม: <b>฿${Math.round(totalFullSpent).toLocaleString()}</b></span>
+            `;
 
             document.getElementById('statTotalRemaining').innerText = '฿' + (remaining > 0 ? remaining : 0).toLocaleString('th-TH', {minimumFractionDigits: 2});
+            const spentPct = totalLimit > 0 ? ((totalSpent / totalLimit) * 100).toFixed(1) : 0;
+            document.getElementById('statSpentPercent').innerText = `ใช้วงเงินไปแล้ว ${spentPct}%`;
+
             document.getElementById('statCurrentMonthPay').innerText = '฿' + currentMonthPay.toLocaleString('th-TH', {minimumFractionDigits: 2});
         }
 
@@ -756,23 +811,29 @@
             items.filter(item => item.name.toLowerCase().includes(filter)).forEach(item => {
                 const card = cards.find(c => c.id === item.cardId) || { name: 'ไม่พบข้อมูลบัตร' };
                 const monthlyPay = item.totalAmount / item.months;
-                
+                const isFullPay = item.payType === 'full' || parseInt(item.months) === 1;
+
                 const endMonthTotal = parseInt(item.startMonth) + parseInt(item.months) - 1;
                 const endYearOffset = Math.floor((endMonthTotal - 1) / 12);
                 const endMonth = ((endMonthTotal - 1) % 12) + 1;
                 const endYear = parseInt(item.startYear) + endYearOffset;
 
+                const payBadge = isFullPay
+                    ? `<span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">ชำระเต็มจำนวน</span>`
+                    : `<span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">ผ่อนชำระ</span>`;
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition">
                         <td class="p-3.5 font-semibold text-slate-800 dark:text-white">${item.name}</td>
+                        <td class="p-3.5">${payBadge}</td>
                         <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">${card.name}</span></td>
                         <td class="p-3.5 text-right font-semibold text-slate-800 dark:text-white">฿${parseFloat(item.totalAmount).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
                         <td class="p-3.5 text-right font-bold text-indigo-600 dark:text-indigo-400">฿${monthlyPay.toLocaleString('th-TH', {maximumFractionDigits: 0})} /ด.</td>
                         <td class="p-3.5 text-center">${item.months} งวด</td>
-                        <td class="p-3.5 text-center text-slate-500">${item.startMonth}/${item.startYear} - ${endMonth}/${endYear}</td>
+                        <td class="p-3.5 text-center text-slate-500">${item.startMonth}/${item.startYear} ${!isFullPay ? `- ${endMonth}/${endYear}` : ''}</td>
                         <td class="p-3.5 text-center space-x-1">
-                            <button onclick="editItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 transition"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="deleteItem('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="requireLogin(() => editItem('${item.id}'))" class="p-1.5 text-slate-400 hover:text-indigo-600 transition" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="requireLogin(() => deleteItem('${item.id}'))" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     </tr>
                 `;
@@ -794,8 +855,8 @@
                         <div class="flex items-center justify-between">
                             <span class="font-bold tracking-wide text-lg">${card.name}</span>
                             <div class="flex items-center gap-1">
-                                <button onclick="editCard('${card.id}')" class="p-1.5 text-white/80 hover:text-white transition"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button onclick="deleteCard('${card.id}')" class="p-1.5 text-white/80 hover:text-rose-300 transition"><i class="fa-solid fa-trash-can"></i></button>
+                                <button onclick="requireLogin(() => editCard('${card.id}'))" class="p-1.5 text-white/80 hover:text-white transition" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="requireLogin(() => deleteCard('${card.id}'))" class="p-1.5 text-white/80 hover:text-rose-300 transition" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
                         </div>
 
@@ -824,8 +885,24 @@
             });
         }
 
+        function togglePayTypeFields() {
+            const payType = document.querySelector('input[name="paymentType"]:checked').value;
+            const monthsContainer = document.getElementById('itemMonthsContainer');
+            const monthsInput = document.getElementById('itemMonths');
+
+            if (payType === 'full') {
+                monthsInput.value = 1;
+                monthsContainer.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                if (monthsInput.value === '1') monthsInput.value = 10;
+                monthsContainer.classList.remove('opacity-40', 'pointer-events-none');
+            }
+        }
+
         function handleSaveCard(e) {
             e.preventDefault();
+            if (!currentUser) return alert('โปรดเข้าสู่ระบบก่อนทำการบันทึกข้อมูล');
+
             const id = document.getElementById('cardId').value || 'card-' + Date.now();
             const cardObj = {
                 id,
@@ -848,13 +925,18 @@
 
         function handleSaveItem(e) {
             e.preventDefault();
+            if (!currentUser) return alert('โปรดเข้าสู่ระบบก่อนทำการบันทึกข้อมูล');
+
             const id = document.getElementById('itemId').value || 'item-' + Date.now();
+            const payType = document.querySelector('input[name="paymentType"]:checked').value;
+            
             const itemObj = {
                 id,
                 name: document.getElementById('itemName').value,
                 cardId: document.getElementById('itemCardId').value,
                 totalAmount: parseFloat(document.getElementById('itemTotalAmount').value),
-                months: parseInt(document.getElementById('itemMonths').value),
+                payType: payType,
+                months: payType === 'full' ? 1 : parseInt(document.getElementById('itemMonths').value),
                 startMonth: parseInt(document.getElementById('itemStartMonth').value),
                 startYear: parseInt(document.getElementById('itemStartYear').value)
             };
@@ -870,7 +952,8 @@
         }
 
         function deleteItem(id) {
-            if (confirm('คุณต้องการลบรายการผ่อนนี้ใช่หรือไม่?')) {
+            if (!currentUser) return alert('โปรดเข้าสู่ระบบก่อนทำการลบข้อมูล');
+            if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
                 items = items.filter(i => i.id !== id);
                 saveLocalStorageData();
                 deleteFromFirestore('items', id);
@@ -879,7 +962,8 @@
         }
 
         function deleteCard(id) {
-            if (confirm('คุณต้องการลบบัตรเครดิตนี้ใช่หรือไม่? (รายการผ่อนผูกกับบัตรนี้จะยังอยู่)')) {
+            if (!currentUser) return alert('โปรดเข้าสู่ระบบก่อนทำการลบข้อมูล');
+            if (confirm('คุณต้องการลบบัตรเครดิตนี้ใช่หรือไม่?')) {
                 cards = cards.filter(c => c.id !== id);
                 saveLocalStorageData();
                 deleteFromFirestore('cards', id);
@@ -906,6 +990,12 @@
             document.getElementById('itemName').value = item.name;
             document.getElementById('itemCardId').value = item.cardId;
             document.getElementById('itemTotalAmount').value = item.totalAmount;
+            
+            const payType = item.payType || (item.months === 1 ? 'full' : 'installment');
+            const radios = document.getElementsByName('paymentType');
+            radios.forEach(r => r.checked = (r.value === payType));
+            togglePayTypeFields();
+
             document.getElementById('itemMonths').value = item.months;
             document.getElementById('itemStartMonth').value = item.startMonth;
             document.getElementById('itemStartYear').value = item.startYear;
@@ -930,6 +1020,16 @@
             document.getElementById(id).classList.add('hidden');
             if (id === 'addCardModal') document.getElementById('cardForm').reset();
             if (id === 'addItemModal') document.getElementById('itemForm').reset();
+        }
+
+        function loadFirebaseConfigToModal() {
+            const savedConfig = localStorage.getItem('credit_krapong_firebase_cfg');
+            if (savedConfig) {
+                const cfg = JSON.parse(savedConfig);
+                document.getElementById('cfgApiKey').value = cfg.apiKey || '';
+                document.getElementById('cfgAuthDomain').value = cfg.authDomain || '';
+                document.getElementById('cfgProjectId').value = cfg.projectId || '';
+            }
         }
 
         function saveFirebaseConfig() {
