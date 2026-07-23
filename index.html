@@ -168,10 +168,10 @@
         </div>
 
         <!-- Navigation Tabs & Action Bar -->
-        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+        <div class="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
             
-            <!-- Tabs Navigation (Segmented Pill Style) -->
-            <div class="bg-slate-100 dark:bg-slate-900/80 p-1.5 rounded-xl flex items-center gap-1 overflow-x-auto no-scrollbar w-full xl:w-auto">
+            <!-- Tabs Navigation (Segmented Control) -->
+            <div class="bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl flex items-center gap-1 overflow-x-auto no-scrollbar flex-shrink-0">
                 <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm flex items-center gap-2">
                     <i class="fa-solid fa-chart-pie text-indigo-500"></i>
                     <span>สรุปตามบัตร & หมวดหมู่</span>
@@ -190,25 +190,30 @@
                 </button>
             </div>
 
-            <!-- Action Buttons Group (Excel & Primary Actions) -->
-            <div class="flex items-center justify-end gap-2 overflow-x-auto no-scrollbar w-full xl:w-auto pt-1 xl:pt-0 border-t xl:border-t-0 border-slate-100 dark:border-slate-700/60">
+            <!-- Action Buttons Toolbar (Neat Single-Row Layout) -->
+            <div class="flex flex-wrap items-center justify-start lg:justify-end gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-700/60">
                 <!-- Hidden Excel File Input -->
                 <input type="file" id="excelFileInput" accept=".xlsx, .xls" onchange="importFromExcel(event)" class="hidden">
                 
-                <button onclick="requireLogin(() => triggerExcelImport())" class="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap">
-                    <i class="fa-solid fa-file-import text-emerald-600 dark:text-emerald-400"></i>
-                    <span>นำเข้า Excel</span>
-                </button>
-                <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap">
-                    <i class="fa-solid fa-file-excel"></i>
-                    <span>ส่งออก Excel</span>
-                </button>
-                <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-0.5 hidden sm:block"></div>
-                <button onclick="requireLogin(() => openAddCardModal())" class="px-3 py-2 bg-slate-100 dark:bg-slate-700/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <!-- Excel Tools Group Panel -->
+                <div class="flex items-center gap-1 bg-slate-100/70 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+                    <button onclick="requireLogin(() => triggerExcelImport())" class="px-2.5 py-1.5 hover:bg-white dark:hover:bg-slate-800 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap" title="นำเข้าข้อมูลจาก Excel">
+                        <i class="fa-solid fa-file-import text-emerald-600"></i>
+                        <span>นำเข้า Excel</span>
+                    </button>
+                    <div class="h-3.5 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
+                    <button onclick="exportToExcel()" class="px-2.5 py-1.5 hover:bg-white dark:hover:bg-slate-800 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap" title="ส่งออกข้อมูลเป็น Excel">
+                        <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                        <span>ส่งออก Excel</span>
+                    </button>
+                </div>
+
+                <!-- Primary Action Buttons -->
+                <button onclick="requireLogin(() => openAddCardModal())" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i class="fa-solid fa-plus text-slate-500 dark:text-slate-400"></i>
                     <span>เพิ่มบัตร</span>
                 </button>
-                <button onclick="requireLogin(() => openAddItemModal())" class="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="requireLogin(() => openAddItemModal())" class="px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i class="fa-solid fa-plus"></i>
                     <span>เพิ่มรายการชำระ</span>
                 </button>
