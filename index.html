@@ -296,8 +296,8 @@
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-chart-pie text-violet-500 text-xl"></i>
                         <div>
-                            <h2 class="text-base font-bold text-slate-800 dark:text-white">แผนภูมิวรกลมแสดงสัดส่วนค่าใช้จ่ายแยกตามหมวดหมู่รายเดือน</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิมิวรกลมสัดส่วนการใช้จ่ายรายหมวดหมู่แบบรายละเอียด</p>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-white">แผนภูมิวงกลมแสดงสัดส่วนค่าใช้จ่ายแยกตามหมวดหมู่รายเดือน</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิมิวงกลมสัดส่วนการใช้จ่ายรายหมวดหมู่แบบรายละเอียด</p>
                         </div>
                     </div>
 
@@ -1497,10 +1497,48 @@
                             <span class="w-3.5 h-3.5 rounded-full" style="background-color: ${cat.color}"></span>
                             <span class="font-medium text-slate-800 dark:text-slate-200">${cat.name}</span>
                         </div>
-                        <button onclick="requireLogin(() => deleteCategory('${cat.name}'))" class="text-slate-400 hover:text-rose-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="flex items-center gap-1">
+                            <button onclick="requireLogin(() => editCategory('${cat.name}'))" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1" title="แก้ไขชื่อหมวดหมู่"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="requireLogin(() => deleteCategory('${cat.name}'))" class="text-slate-400 hover:text-rose-500 p-1" title="ลบหมวดหมู่"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
                     </li>
                 `;
             });
+        }
+
+        function editCategory(oldName) {
+            if (!currentUser) return alert('โปรดเข้าสู่ระบบก่อนทำการแก้ไขข้อมูล');
+            const cat = categories.find(c => c.name === oldName);
+            if (!cat) return;
+
+            const newName = prompt('แก้ไขชื่อหมวดหมู่:', cat.name);
+            if (newName === null) return; // กดยกเลิก
+            
+            const trimmedNewName = newName.trim();
+            if (!trimmedNewName) return alert('ชื่อหมวดหมู่ต้องไม่เป็นค่าว่าง');
+
+            if (trimmedNewName !== oldName && categories.some(c => c.name === trimmedNewName)) {
+                return alert('มีหมวดหมู่นี้ในระบบอยู่แล้ว');
+            }
+
+            // อัปเดตชื่อหมวดหมู่
+            cat.name = trimmedNewName;
+            
+            if (trimmedNewName !== oldName) {
+                deleteFromFirestore('categories', oldName);
+            }
+            syncToFirestore('categories', trimmedNewName, cat);
+
+            // อัปเดตรายการค่าใช้จ่ายเดิมทั้งหมดที่ใช้หมวดหมู่นี้
+            items.forEach(item => {
+                if (item.category === oldName) {
+                    item.category = trimmedNewName;
+                    syncToFirestore('items', item.id, item);
+                }
+            });
+
+            saveLocalStorageData();
+            renderAllViews();
         }
 
         function handleSaveCategory(e) {
