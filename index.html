@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Dashboard & 5-Year Installment Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-xl shadow-md">
+                    <i class="fa-solid fa-credit-card text-amber-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">ระบบจัดการค่าใช้จ่ายบัตรเครดิต & วางแผนผ่อนชำระ 5 ปี</h1>
+                    <p class="text-xs text-indigo-200">รองรับ 10,000 รายการ • คำนวณวันตัดรอบและวันชำระจริงให้อัตโนมัติ (2026-2030)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Status Badge -->
+                <div id="cloud-status-badge" class="bg-indigo-950/80 text-amber-300 text-xs font-medium px-3 py-2 rounded-xl border border-indigo-700/50 flex items-center space-x-2 shadow-inner">
+                    <span id="cloud-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                    <span id="cloud-status-text">กำลังเชื่อมต่อคลาวด์...</span>
+                </div>
+
+                <!-- Hidden File Input -->
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(event)">
+                
+                <button onclick="document.getElementById('excel-file-input').click()" class="bg-indigo-700 hover:bg-indigo-600 text-white font-medium px-4 py-2.5 rounded-xl text-sm flex items-center space-x-2 transition shadow-md hover:shadow-lg active:scale-95 border border-indigo-500/50">
+                    <i class="fa-solid fa-file-import text-lg text-amber-300"></i>
+                    <span>นำเข้าไฟล์ Excel (.xlsx)</span>
+                </button>
+
+                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2.5 rounded-xl text-sm flex items-center space-x-2 transition shadow-md hover:shadow-lg active:scale-95">
+                    <i class="fa-solid fa-file-excel text-lg"></i>
+                    <span>ดาวน์โหลดไฟล์ Excel (.xlsx)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-indigo-950 px-4 sm:px-8 border-t border-indigo-800/50">
+            <div class="max-w-7xl mx-auto flex space-x-2 md:space-x-6 overflow-x-auto py-2">
+                <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 bg-indigo-600 text-white shadow whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard สรุปบัตรเครดิต & หมวดหมู่</span>
+                </button>
+                <button onclick="switchTab('matrix')" id="tab-btn-matrix" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-indigo-200 hover:bg-indigo-800/50 whitespace-nowrap">
+                    <i class="fa-solid fa-table-cells"></i>
+                    <span>ตารางผ่อนชำระ 5 ปี (60 เดือน)</span>
+                </button>
+                <button onclick="switchTab('cards')" id="tab-btn-cards" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-indigo-200 hover:bg-indigo-800/50 whitespace-nowrap">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>ตั้งค่าบัตรเครดิต & หมวดหมู่</span>
+                </button>
+                <button onclick="switchTab('items')" id="tab-btn-items" class="px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-indigo-200 hover:bg-indigo-800/50 whitespace-nowrap">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>จัดการรายการค่าใช้จ่าย (<span id="items-count-badge">0</span>/10,000)</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
+
+        <!-- Toast Notification Box -->
+        <div id="toast-message" class="hidden fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 transition-all duration-300">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-xl" id="toast-icon"></i>
+            <span id="toast-text" class="text-sm font-medium">ข้อความแจ้งเตือน</span>
+        </div>
+
+        <!-- ================= TAB 1: DASHBOARD ================= -->
+        <section id="tab-dashboard" class="space-y-8">
+            <!-- Summary Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">รวมมูลค่าการซื้อทั้งหมด</p>
+                        <h3 class="text-2xl font-bold text-slate-900 mt-1" id="stat-total-spending">฿0.00</h3>
+                        <p class="text-xs text-slate-400 mt-1">จากทั้งหมด <span id="stat-total-items">0</span> รายการ</p>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">ภาระผ่อนเฉลี่ย/เดือน</p>
+                        <h3 class="text-2xl font-bold text-amber-600 mt-1" id="stat-avg-monthly">฿0.00</h3>
+                        <p class="text-xs text-slate-400 mt-1">คำนวณจากปี <span id="stat-avg-year">2026</span></p>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-calendar-day"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">รายการผ่อนชำระปัจจุบัน</p>
+                        <h3 class="text-2xl font-bold text-emerald-600 mt-1" id="stat-installment-items">0</h3>
+                        <p class="text-xs text-slate-400 mt-1">ความจุสูงสุด 10,000 แถว</p>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">เดือนที่ชำระสูงสุด</p>
+                        <h3 class="text-2xl font-bold text-rose-600 mt-1" id="stat-peak-month">-</h3>
+                        <p class="text-xs text-rose-500 font-medium mt-1" id="stat-peak-amount">฿0.00</p>
+                    </div>
+                    <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Card Monthly Summary Table -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-credit-card text-indigo-600"></i>
+                            <span>ตารางสรุปยอดชำระแยกตามบัตรเครดิต รายเดือน</span>
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-0.5">วิเคราะห์ยอดที่ต้องชำระของบัตรเครดิตตามวันตัดรอบและวันชำระจริงในแต่ละเดือน</p>
+                    </div>
+                    <div class="flex items-center space-x-3 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                        <label for="card-year-select" class="text-xs font-bold text-slate-700 pl-2">เลือกปี:</label>
+                        <select id="card-year-select" onchange="renderCardSummaryTable()" class="bg-white border border-slate-300 text-slate-900 text-sm font-semibold rounded-lg focus:ring-indigo-500 focus:border-indigo-500 px-3 py-1.5 shadow-sm">
+                            <option value="2026" selected>ปี 2026</option>
+                            <option value="2027">ปี 2027</option>
+                            <option value="2028">ปี 2028</option>
+                            <option value="2029">ปี 2029</option>
+                            <option value="2030">ปี 2030</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl max-h-[500px]">
+                    <table class="w-full text-sm text-left text-slate-600 border-collapse">
+                        <thead class="text-xs uppercase bg-slate-800 text-white sticky top-0 z-20">
+                            <tr id="card-summary-header">
+                                <th class="px-4 py-3 bg-slate-800 font-semibold min-w-[200px] sticky left-0 z-30 shadow">ชื่อบัตรเครดิต</th>
+                                <th class="px-3 py-3 bg-slate-800 text-center min-w-[80px]">ตัดรอบ</th>
+                                <th class="px-3 py-3 bg-slate-800 text-center min-w-[80px]">ครบกำหนด</th>
+                                <th class="px-4 py-3 bg-indigo-950 text-amber-300 text-right min-w-[120px]">รวมทั้งปี</th>
+                            </tr>
+                        </thead>
+                        <tbody id="card-summary-body" class="divide-y divide-slate-200">
+                            <!-- Card rows inserted by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Category Breakdown Interactive Pie Chart -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-indigo-600"></i>
+                            <span>แผนภูมิวงกลมแสดงสัดส่วนค่าใช้จ่ายแยกตามหมวดหมู่รายเดือน</span>
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-0.5">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิสัดส่วนการใช้จ่ายรายหมวดหมู่แบบละเอียด</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold text-slate-600 pl-2">ปี:</span>
+                            <select id="pie-year-select" onchange="renderSpecificMonthPieChart()" class="bg-white border border-slate-300 text-slate-900 text-sm font-semibold rounded-xl px-3 py-1.5 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                                <option value="2026" selected>2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                                <option value="2029">2029</option>
+                                <option value="2030">2030</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold text-slate-600">เดือน:</span>
+                            <select id="pie-month-select" onchange="renderSpecificMonthPieChart()" class="bg-white border border-slate-300 text-slate-900 text-sm font-semibold rounded-xl px-3 py-1.5 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                                <option value="0">มกราคม (ม.ค.)</option>
+                                <option value="1">กุมภาพันธ์ (ก.พ.)</option>
+                                <option value="2">มีนาคม (มี.ค.)</option>
+                                <option value="3">เมษายน (เม.ย.)</option>
+                                <option value="4">พฤษภาคม (พ.ค.)</option>
+                                <option value="5">มิถุนายน (มิ.ย.)</option>
+                                <option value="6" selected>กรกฎาคม (ก.ค.)</option>
+                                <option value="7">สิงหาคม (ส.ค.)</option>
+                                <option value="8">กันยายน (ก.ย.)</option>
+                                <option value="9">ตุลาคม (ต.ค.)</option>
+                                <option value="10">พฤศจิกายน (พ.ย.)</option>
+                                <option value="11">ธันวาคม (ธ.ค.)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-slate-50/60 p-6 rounded-2xl border border-slate-200/80">
+                    <div class="lg:col-span-5 flex flex-col items-center justify-center min-h-[300px]">
+                        <div class="w-full max-w-[320px] h-[300px] relative flex items-center justify-center">
+                            <canvas id="single-month-pie-chart"></canvas>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2 text-center" id="pie-chart-subtitle">แสดงสัดส่วนค่าใช้จ่ายรายหมวดหมู่</p>
+                    </div>
+
+                    <div class="lg:col-span-7 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+                            <h3 class="font-bold text-slate-900 text-base" id="pie-details-title">สรุปค่าใช้จ่ายประจำเดือน</h3>
+                            <span class="text-sm font-extrabold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full" id="pie-details-total">฿0.00</span>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs uppercase bg-slate-100 text-slate-600">
+                                    <tr>
+                                        <th class="px-3 py-2 rounded-l-lg">หมวดหมู่ค่าใช้จ่าย</th>
+                                        <th class="px-3 py-2 text-right">จำนวนเงิน (บาท)</th>
+                                        <th class="px-3 py-2 text-right rounded-r-lg">สัดส่วน (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pie-category-breakdown-body" class="divide-y divide-slate-100">
+                                    <!-- Rows generated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: 5-YEAR (60-MONTH) MATRIX ================= -->
+        <section id="tab-matrix" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full uppercase">5-Year Matrix</span>
+                            <h2 class="text-xl font-bold text-slate-900">ตารางคำนวณภาระค่าใช้จ่ายผ่อนชำระรายเดือน (5 ปี / 60 เดือน)</h2>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-1">
+                            <i class="fa-solid fa-circle-info text-indigo-500 mr-1"></i>
+                            <strong>ยอดรวมสรุปวางไว้บนสุด (แถวสรุป)</strong> รองรับการผ่อนชำระต่อเนื่องตั้งแต่มกราคม 2026 ถึง ธันวาคม 2030 (60 เดือน)
+                        </p>
+                    </div>
+                    <button onclick="switchTab('items')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition flex items-center space-x-2 shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>เพิ่ม/แก้ไขรายการ (รองรับ 10,000 แถว)</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl max-h-[600px]">
+                    <table class="w-full text-sm text-left text-slate-600 border-collapse">
+                        <thead class="text-xs uppercase bg-slate-800 text-white sticky top-0 z-20">
+                            <tr id="matrix-header-row">
+                                <th scope="col" class="px-4 py-3 min-w-[60px] text-center sticky left-0 bg-slate-800 z-30 shadow">ID</th>
+                                <th scope="col" class="px-4 py-3 min-w-[220px] sticky left-[60px] bg-slate-800 z-30 shadow">รายการ / ร้านค้า</th>
+                                <th scope="col" class="px-4 py-3 min-w-[120px] text-right">ยอดรวม (บาท)</th>
+                                <th scope="col" class="px-4 py-3 min-w-[100px] text-center">รูปแบบ</th>
+                                <th scope="col" class="px-4 py-3 min-w-[90px] text-center">ผ่อน (เดือน)</th>
+                                <th scope="col" class="px-4 py-3 min-w-[120px] text-right bg-indigo-950 font-bold text-amber-300">ยอด/เดือน</th>
+                                <th scope="col" class="px-4 py-3 min-w-[110px] text-center">เริ่มชำระ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrix-table-body">
+                            <!-- Rows inserted by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: CREDIT CARD & CATEGORY SETTINGS ================= -->
+        <section id="tab-cards" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Credit Cards Table -->
+                <div class="lg:col-span-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-credit-card text-indigo-600"></i>
+                                <span>รายการตั้งค่าบัตรเครดิต (<span id="card-count-badge">0</span> ใบ)</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">กำหนดวันตัดรอบ, วันครบกำหนดชำระ และวงเงินของบัตรเครดิตในระบบ</p>
+                        </div>
+                        <button onclick="openCardModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm active:scale-95">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>เพิ่มบัตรเครดิตใหม่</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[550px]">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs uppercase bg-slate-100 text-slate-700 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3">ชื่อบัตรเครดิต</th>
+                                    <th class="px-4 py-3 text-center">วันตัดรอบ</th>
+                                    <th class="px-4 py-3 text-center">วันครบกำหนด</th>
+                                    <th class="px-4 py-3 text-right">วงเงินบัตร (บาท)</th>
+                                    <th class="px-4 py-3 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cards-settings-tbody" class="divide-y divide-slate-200">
+                                <!-- Cards inserted by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Categories List -->
+                <div class="lg:col-span-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-tags text-indigo-600"></i>
+                                <span>หมวดหมู่ค่าใช้จ่าย (<span id="cat-count-badge">0</span> หมวด)</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">จัดการหมวดหมู่สำหรับจำแนกค่าใช้จ่าย</p>
+                        </div>
+                        <button onclick="openCatModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition flex items-center space-x-1 shadow-sm active:scale-95">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>เพิ่มหมวด</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-2.5 max-h-[550px] overflow-y-auto custom-scrollbar pr-1" id="categories-list-container">
+                        <!-- Categories inserted by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: EXPENSE ITEMS MANAGEMENT ================= -->
+        <section id="tab-items" class="hidden space-y-6">
+            <!-- Add Item Form -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-indigo-600"></i>
+                    <span>เพิ่มรายการค่าใช้จ่าย / ผ่อนชำระใหม่</span>
+                </h3>
+
+                <form onsubmit="handleAddItem(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">วันที่ซื้อ / ทำรายการ *</label>
+                        <input type="date" id="input-date" required onchange="autoSetStartMonthByDate()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">รายการ / ร้านค้า *</label>
+                        <input type="text" id="input-name" required placeholder="เช่น ซื้อไอโฟน 16 Pro Max" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">บัตรเครดิต *</label>
+                        <select id="input-card" required onchange="autoSetStartMonthByDate()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                            <!-- Card Options -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">หมวดหมู่ *</label>
+                        <select id="input-category" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                            <!-- Category Options -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ยอดรวม (บาท) *</label>
+                        <input type="number" id="input-total" required step="0.01" min="1" placeholder="35000" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">รูปแบบการชำระ *</label>
+                        <select id="input-format" onchange="toggleMonthsInput()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="ผ่อนชำระ" selected>ผ่อนชำระ</option>
+                            <option value="จ่ายเต็ม">จ่ายเต็มจำนวน</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">จำนวนงวด (เดือน) *</label>
+                        <input type="number" id="input-months" required min="1" max="60" value="10" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">เดือนเริ่มชำระ *</label>
+                        <select id="input-start-month" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                            <!-- Generated by JS -->
+                        </select>
+                        <p id="due-month-helper" class="text-[11px] text-indigo-600 font-medium mt-1 flex items-center gap-1">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>คำนวณวันตัดรอบบัตรและวันครบกำหนดให้อัตโนมัติ</span>
+                        </p>
+                    </div>
+
+                    <div class="md:col-span-2 lg:col-span-4 flex justify-end space-x-2 pt-2">
+                        <button type="button" onclick="clearForm()" class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-sm transition">ล้างข้อมูล</button>
+                        <button type="submit" class="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow transition active:scale-95">บันทึกรายการ</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Items Search and Table -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <h3 class="text-base font-bold text-slate-900">รายการค่าใช้จ่ายทั้งหมดในระบบ (<span id="items-used-count">0</span> / 10,000 แถว)</h3>
+                    
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <input type="text" id="search-input" onkeyup="renderItemsTable()" placeholder="ค้นหารายการ / ร้านค้า..." class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl px-3 py-2 w-full md:w-48 focus:ring-indigo-500 focus:border-indigo-500">
+                        
+                        <select id="filter-card-select" onchange="renderItemsTable()" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">-- กรองทุกบัตร --</option>
+                        </select>
+
+                        <select id="filter-cat-select" onchange="renderItemsTable()" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">-- กรองทุกหมวดหมู่ --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[500px]">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs uppercase bg-slate-100 text-slate-700 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 text-center">ID</th>
+                                <th class="px-4 py-3 text-center">วันที่ซื้อ</th>
+                                <th class="px-4 py-3">รายการ / ร้านค้า</th>
+                                <th class="px-4 py-3">บัตรเครดิต</th>
+                                <th class="px-4 py-3">หมวดหมู่</th>
+                                <th class="px-4 py-3 text-right">ยอดรวม</th>
+                                <th class="px-4 py-3 text-center">รูปแบบ</th>
+                                <th class="px-4 py-3 text-center">ผ่อน (เดือน)</th>
+                                <th class="px-4 py-3 text-right">ยอด/เดือน</th>
+                                <th class="px-4 py-3 text-center">เริ่มชำระ</th>
+                                <th class="px-4 py-3 text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-table-body" class="divide-y divide-slate-200">
+                            <!-- Items inserted by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Card Add/Edit Modal -->
+        <div id="card-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2" id="card-modal-title">
+                        <i class="fa-solid fa-credit-card text-indigo-600"></i>
+                        <span>เพิ่มบัตรเครดิตใหม่</span>
+                    </h3>
+                    <button onclick="closeCardModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form id="card-form" onsubmit="handleSaveCard(event)" class="space-y-3">
+                    <input type="hidden" id="card-edit-index" value="-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อบัตรเครดิต *</label>
+                        <input type="text" id="card-input-name" required placeholder="เช่น SCB Up2Me 3425" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">วันตัดรอบ (ทุกวันที่) *</label>
+                            <input type="number" id="card-input-cut" required min="1" max="31" placeholder="15" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">วันครบกำหนด (ทุกวันที่) *</label>
+                            <input type="number" id="card-input-due" required min="1" max="31" placeholder="5" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">วงเงินบัตร (บาท)</label>
+                        <input type="number" id="card-input-limit" min="0" step="1000" placeholder="100000" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-3">
+                        <button type="button" onclick="closeCardModal()" class="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">ยกเลิก</button>
+                        <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow transition">บันทึกข้อมูล</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Category Add Modal -->
+        <div id="cat-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-tag text-indigo-600"></i>
+                        <span>เพิ่มหมวดหมู่ใหม่</span>
+                    </h3>
+                    <button onclick="closeCatModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form id="cat-form" onsubmit="handleSaveCat(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อหมวดหมู่ *</label>
+                        <input type="text" id="cat-input-name" required placeholder="เช่น ค่าการศึกษา/เล่าเรียน" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">สีประจำหมวดหมู่</label>
+                        <input type="color" id="cat-input-color" value="#6366f1" class="w-full h-10 p-1 bg-slate-50 border border-slate-300 rounded-xl cursor-pointer">
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-3">
+                        <button type="button" onclick="closeCatModal()" class="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">ยกเลิก</button>
+                        <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow transition">บันทึกหมวดหมู่</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+            <p>ระบบวางแผนและสรุปค่าใช้จ่ายบัตรเครดิต • พัฒนาขึ้นเพื่อรองรับรายการผ่อนชำระ 10,000 รายการ พร้อมตารางคำนวณอัตโนมัติ 5 ปี (60 เดือน)</p>
+            <p class="text-slate-500">กดปุ่ม "ดาวน์โหลดไฟล์ Excel (.xlsx)" เพื่อรับไฟล์ Microsoft Excel (.xlsx) ที่สมบูรณ์พร้อมสูตรคำนวณทันที</p>
+        </div>
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =========================================================================
+        // 🔑 ใส่ชุดกุญแจ Firebase ของคุณเรียบร้อยแล้ว
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzcu30bGkcnITz7sOe0lkWa1ZSlhIVZIU",
+            authDomain: "credit-krapong.firebaseapp.com",
+            projectId: "credit-krapong",
+            storageBucket: "credit-krapong.firebasestorage.app",
+            messagingSenderId: "54373564294",
+            appId: "1:54373564294:web:7648d9cce3283415fdf607"
+        };
+        // =========================================================================
+
+        // --- 1. Global State & Data Definitions ---
+        const MONTHS_COUNT = 60; // 5 Years (2026-01 to 2030-12)
+        const START_YEAR = 2026;
+        const MAX_ITEMS_CAPACITY = 10000;
+
+        const appId = 'credit-krapong-shared-v1';
+        let db = null;
+        let auth = null;
+        let isCloudSyncActive = false;
+
+        // Generate Month Keys Array ['2026-01', ..., '2030-12']
+        const monthKeys = [];
+        const monthLabels = [];
+        const thaiMonthShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const thaiMonthFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+        for (let y = 0; y < 5; y++) {
+            const year = START_YEAR + y;
+            for (let m = 0; m < 12; m++) {
+                const monthNum = String(m + 1).padStart(2, '0');
+                monthKeys.push(`${year}-${monthNum}`);
+                monthLabels.push(`${thaiMonthShort[m]} ${year}`);
+            }
+        }
+
+        // Default Credit Cards Array
+        let creditCards = [
+            { name: "SCB Up2Me 3425", cutDay: 11, dueDay: 1, limit: 100000 },
+            { name: "SCB 9536", cutDay: 11, dueDay: 1, limit: 100000 },
+            { name: "TTB Smart 9001", cutDay: 12, dueDay: 2, limit: 100000 },
+            { name: "TTB So Chill 1066", cutDay: 12, dueDay: 2, limit: 100000 },
+            { name: "TTB Flash 2161", cutDay: 12, dueDay: 2, limit: 100000 },
+            { name: "TTB Global 6556", cutDay: 12, dueDay: 2, limit: 100000 },
+            { name: "Krungsri Hompro 1769", cutDay: 12, dueDay: 2, limit: 100000 },
+            { name: "Krungsri JCB 9138", cutDay: 12, dueDay: 2, limit: 100000 },
+            { name: "Krungsri The1 5500", cutDay: 15, dueDay: 5, limit: 100000 },
+            { name: "KTC 8062", cutDay: 20, dueDay: 4, limit: 100000 },
+            { name: "KTC 3619", cutDay: 20, dueDay: 4, limit: 100000 },
+            { name: "KB 8206", cutDay: 20, dueDay: 4, limit: 100000 },
+            { name: "KB PTT 1711", cutDay: 20, dueDay: 4, limit: 100000 },
+            { name: "KB Shopee 1708", cutDay: 20, dueDay: 4, limit: 100000 },
+            { name: "KB Line 6907", cutDay: 20, dueDay: 4, limit: 100000 },
+            { name: "UOB Simpli 5781", cutDay: 25, dueDay: 17, limit: 100000 },
+            { name: "UOB Lazada", cutDay: 25, dueDay: 17, limit: 100000 },
+            { name: "UOB Grab", cutDay: 25, dueDay: 17, limit: 100000 },
+            { name: "UOB TMRW", cutDay: 25, dueDay: 17, limit: 100000 },
+            { name: "UOB Premier 1565", cutDay: 25, dueDay: 17, limit: 100000 },
+            { name: "UOB Prefer 3927", cutDay: 25, dueDay: 17, limit: 100000 },
+            { name: "AEON Shopee 0915", cutDay: 10, dueDay: 2, limit: 100000 }
+        ];
+
+        // Default Categories
+        let categories = [
+            'อาหารและเครื่องดื่ม',
+            'น้ำมันรถ',
+            'ของใช้ในบ้าน',
+            'อาหารแมวและของใช้',
+            'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า',
+            'ท่องเที่ยว/โรงแรม',
+            'เสื้อผ้า',
+            'สาธารณูปโภค/สมัครบริการ',
+            'สุขภาพ/ประกัน',
+            'อื่นๆ'
+        ];
+
+        let categoryColors = {
+            'อาหารและเครื่องดื่ม': '#f59e0b',
+            'น้ำมันรถ': '#ef4444',
+            'ของใช้ในบ้าน': '#10b981',
+            'อาหารแมวและของใช้': '#8b5cf6',
+            'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า': '#3b82f6',
+            'ท่องเที่ยว/โรงแรม': '#ec4899',
+            'เสื้อผ้า': '#06b6d4',
+            'สาธารณูปโภค/สมัครบริการ': '#6366f1',
+            'สุขภาพ/ประกัน': '#14b8a6',
+            'อื่นๆ': '#64748b'
+        };
+
+        // Default Sample Items
+        let items = [
+            { id: 1, date: '2026-01-15', name: 'ซื้อโทรศัพท์มือถือ 5G flagship', card: 'SCB Up2Me 3425', category: 'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า', total: 35000, format: 'ผ่อนชำระ', months: 10, monthly: 3500, startMonth: '2026-03' },
+            { id: 2, date: '2026-01-20', name: 'ทานอาหารบุฟเฟต์ฉลองปีใหม่', card: 'KTC 8062', category: 'อาหารและเครื่องดื่ม', total: 2800, format: 'จ่ายเต็ม', months: 1, monthly: 2800, startMonth: '2026-02' },
+            { id: 3, date: '2026-01-25', name: 'เติมน้ำมันเดินทางต่างจังหวัด', card: 'KB PTT 1711', category: 'น้ำมันรถ', total: 1900, format: 'จ่ายเต็ม', months: 1, monthly: 1900, startMonth: '2026-03' },
+            { id: 4, date: '2026-02-05', name: 'สั่งอาหารแมวและของใช้สัตว์เลี้ยง', card: 'TTB So Chill 1066', category: 'อาหารแมวและของใช้', total: 4500, format: 'ผ่อนชำระ', months: 3, monthly: 1500, startMonth: '2026-03' },
+            { id: 5, date: '2026-02-10', name: 'จองโรงแรมทริปพักผ่อนภูเก็ต', card: 'UOB Premier 1565', category: 'ท่องเที่ยว/โรงแรม', total: 24000, format: 'ผ่อนชำระ', months: 6, monthly: 4000, startMonth: '2026-03' },
+            { id: 6, date: '2026-02-18', name: 'ซื้อชุดทำงานและเสื้อผ้าแฟชั่น', card: 'Krungsri The1 5500', category: 'เสื้อผ้า', total: 5000, format: 'จ่ายเต็ม', months: 1, monthly: 5000, startMonth: '2026-04' },
+            { id: 7, date: '2026-03-01', name: 'จ่ายเบี้ยประกันสุขภาพประจำปี', card: 'TTB Smart 9001', category: 'สุขภาพ/ประกัน', total: 36000, format: 'ผ่อนชำระ', months: 12, monthly: 3000, startMonth: '2026-04' },
+            { id: 8, date: '2026-03-12', name: 'ซื้อของใช้เข้าบ้าน ซูเปอร์มาร์เก็ต', card: 'Krungsri Hompro 1769', category: 'ของใช้ในบ้าน', total: 6000, format: 'ผ่อนชำระ', months: 3, monthly: 2000, startMonth: '2026-04' },
+            { id: 9, date: '2026-04-05', name: 'ค่าบริการคลาวด์และซอฟต์แวร์รายปี', card: 'UOB Lazada', category: 'สาธารณูปโภค/สมัครบริการ', total: 4200, format: 'ผ่อนชำระ', months: 6, monthly: 700, startMonth: '2026-05' },
+            { id: 10, date: '2026-05-15', name: 'ซื้อเครื่องอบผ้าและตู้เย็น', card: 'KB 8206', category: 'อุปกรณ์ไอที/เครื่องใช้ไฟฟ้า', total: 28000, format: 'ผ่อนชำระ', months: 10, monthly: 2800, startMonth: '2026-06' }
+        ];
+
+        let singlePieChartInstance = null;
+
+        // Calculate actual payment due month based on card cutoff day and due day
+        function calculateDueMonth(dateStr, cardName) {
+            if (!dateStr) return '2026-01';
+            const [yStr, mStr, dStr] = dateStr.split('-');
+            let year = parseInt(yStr) || 2026;
+            let month = (parseInt(mStr) || 1) - 1; // 0-indexed month
+            let day = parseInt(dStr) || 1;
+
+            const card = creditCards.find(c => c.name === cardName);
+            if (!card) {
+                return `${year}-${String(month + 1).padStart(2, '0')}`;
+            }
+
+            // 1. Statement Cycle Cutoff Logic
+            let stmtYear = year;
+            let stmtMonth = month;
+
+            if (day > card.cutDay) {
+                stmtMonth++;
+                if (stmtMonth > 11) {
+                    stmtMonth = 0;
+                    stmtYear++;
+                }
+            }
+
+            // 2. Payment Due Month Logic
+            let dueYear = stmtYear;
+            let dueMonth = stmtMonth;
+
+            if (card.dueDay < card.cutDay) {
+                dueMonth++;
+                if (dueMonth > 11) {
+                    dueMonth = 0;
+                    dueYear++;
+                }
+            }
+
+            return `${dueYear}-${String(dueMonth + 1).padStart(2, '0')}`;
+        }
+
+        async function initCloudSync() {
+            try {
+                if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    await signInAnonymously(auth);
+
+                    if (auth.currentUser) {
+                        isCloudSyncActive = true;
+                        updateCloudStatus(true, "🟢 ออนไลน์ - ซิงก์ข้อมูลคลาวด์เรียลไทม์");
+                        setupFirestoreRealtimeListener();
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Cloud sync unavailable, falling back to LocalStorage:", err);
+            }
+            updateCloudStatus(false, "🟡 ออฟไลน์ - บันทึกในเครื่อง");
+            loadItemsFromLocalStorage();
+            refreshCurrentUI();
+        }
+
+        function updateCloudStatus(isOnline, text) {
+            const statusDot = document.getElementById('cloud-status-dot');
+            const statusText = document.getElementById('cloud-status-text');
+            if (statusDot) {
+                statusDot.className = `w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`;
+            }
+            if (statusText) {
+                statusText.innerText = text;
+            }
+        }
+
+        function setupFirestoreRealtimeListener() {
+            if (!db || !auth.currentUser) return;
+            const stateDocRef = doc(db, 'credit_app_data', 'main_state');
+            
+            onSnapshot(stateDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.items) items = JSON.parse(data.items);
+                    if (data.creditCards) creditCards = JSON.parse(data.creditCards);
+                    if (data.categories) categories = JSON.parse(data.categories);
+                    if (data.categoryColors) categoryColors = JSON.parse(data.categoryColors);
+                    populateFormDropdowns();
+                    refreshCurrentUI();
+                } else {
+                    saveStateToCloudAndLocal();
+                }
+            }, (error) => {
+                console.error("Firestore Listen Error:", error);
+                updateCloudStatus(false, "🟡 ออฟไลน์ - บันทึกในเครื่อง");
+            });
+        }
+
+        async function saveStateToCloudAndLocal() {
+            localStorage.setItem('credit_krapong_items_v5year', JSON.stringify(items));
+            localStorage.setItem('credit_krapong_cards_v5year', JSON.stringify(creditCards));
+            localStorage.setItem('credit_krapong_cats_v5year', JSON.stringify(categories));
+            localStorage.setItem('credit_krapong_colors_v5year', JSON.stringify(categoryColors));
+
+            if (isCloudSyncActive && db && auth.currentUser) {
+                try {
+                    const stateDocRef = doc(db, 'credit_app_data', 'main_state');
+                    await setDoc(stateDocRef, {
+                        items: JSON.stringify(items),
+                        creditCards: JSON.stringify(creditCards),
+                        categories: JSON.stringify(categories),
+                        categoryColors: JSON.stringify(categoryColors),
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (e) {
+                    console.error("Cloud Save Error:", e);
+                }
+            }
+        }
+
+        function formatCurrency(num) {
+            return '฿' + Number(num || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-message');
+            document.getElementById('toast-text').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        }
+
+        function refreshCurrentUI() {
+            renderDashboard();
+            renderCardsAndCategoriesSettings();
+            renderItemsTable();
+        }
+
+        function switchTab(tabId) {
+            const tabs = ['dashboard', 'matrix', 'cards', 'items'];
+            tabs.forEach(t => {
+                const sec = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (sec && btn) {
+                    if (t === tabId) {
+                        sec.classList.remove('hidden');
+                        btn.className = 'px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 bg-indigo-600 text-white shadow whitespace-nowrap';
+                    } else {
+                        sec.classList.add('hidden');
+                        btn.className = 'px-4 py-2 text-sm font-medium rounded-lg transition flex items-center space-x-2 text-indigo-200 hover:bg-indigo-800/50 whitespace-nowrap';
+                    }
+                }
+            });
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'matrix') renderMatrixTable();
+            if (tabId === 'cards') renderCardsAndCategoriesSettings();
+            if (tabId === 'items') renderItemsTable();
+        }
+
+        function getItemPaymentForMonth(item, mKey) {
+            if (!item || !item.startMonth) return 0;
+            const [startY, startM] = item.startMonth.split('-').map(Number);
+            const [targetY, targetM] = mKey.split('-').map(Number);
+
+            const startIndex = (startY - START_YEAR) * 12 + (startM - 1);
+            const targetIndex = (targetY - START_YEAR) * 12 + (targetM - 1);
+
+            const numMonths = item.format === 'จ่ายเต็ม' ? 1 : (parseInt(item.months) || 1);
+
+            if (targetIndex >= startIndex && targetIndex < startIndex + numMonths) {
+                return parseFloat(item.monthly) || 0;
+            }
+            return 0;
+        }
+
+        function calculateMonthlyPayment(total, format, months) {
+            if (format === 'จ่ายเต็ม' || !months || months <= 1) return total;
+            return Math.round((total / months) * 100) / 100;
+        }
+
+        function loadItemsFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('credit_krapong_items_v5year');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    if (Array.isArray(parsed) && parsed.length > 0) items = parsed;
+                }
+                const savedCards = localStorage.getItem('credit_krapong_cards_v5year');
+                if (savedCards) {
+                    const parsedCards = JSON.parse(savedCards);
+                    if (Array.isArray(parsedCards) && parsedCards.length > 0) creditCards = parsedCards;
+                }
+                const savedCats = localStorage.getItem('credit_krapong_cats_v5year');
+                if (savedCats) {
+                    const parsedCats = JSON.parse(savedCats);
+                    if (Array.isArray(parsedCats) && parsedCats.length > 0) categories = parsedCats;
+                }
+                const savedColors = localStorage.getItem('credit_krapong_colors_v5year');
+                if (savedColors) {
+                    const parsedColors = JSON.parse(savedColors);
+                    if (parsedColors) categoryColors = parsedColors;
+                }
+            } catch (err) {
+                console.error("Error loading from localStorage", err);
+            }
+        }
+
+        function populateFormDropdowns() {
+            const cardSelects = [document.getElementById('input-card'), document.getElementById('filter-card-select')];
+            cardSelects.forEach(select => {
+                if (!select) return;
+                const isFilter = select.id.includes('filter');
+                select.innerHTML = isFilter ? '<option value="">-- กรองทุกบัตร --</option>' : '';
+                creditCards.forEach(c => {
+                    select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+                });
+            });
+
+            const catSelects = [document.getElementById('input-category'), document.getElementById('filter-cat-select')];
+            catSelects.forEach(select => {
+                if (!select) return;
+                const isFilter = select.id.includes('filter');
+                select.innerHTML = isFilter ? '<option value="">-- กรองทุกหมวดหมู่ --</option>' : '';
+                categories.forEach(cat => {
+                    select.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+            });
+
+            const startMonthSelect = document.getElementById('input-start-month');
+            if (startMonthSelect) {
+                startMonthSelect.innerHTML = '';
+                monthKeys.forEach((key, idx) => {
+                    startMonthSelect.innerHTML += `<option value="${key}">${monthLabels[idx]}</option>`;
+                });
+            }
+        }
+
+        function renderDashboard() {
+            const totalSpending = items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
+            document.getElementById('stat-total-spending').innerText = formatCurrency(totalSpending);
+            document.getElementById('stat-total-items').innerText = items.length;
+
+            const year2026Keys = monthKeys.filter(k => k.startsWith('2026'));
+            const year2026Total = year2026Keys.reduce((sum, mKey) => {
+                return sum + items.reduce((s, item) => s + getItemPaymentForMonth(item, mKey), 0);
+            }, 0);
+            document.getElementById('stat-avg-monthly').innerText = formatCurrency(year2026Total / 12);
+
+            const activeInstallments = items.filter(i => i.format === 'ผ่อนชำระ').length;
+            document.getElementById('stat-installment-items').innerText = activeInstallments;
+
+            let maxPayment = 0;
+            let maxMonthLabel = '-';
+            monthKeys.forEach((mKey, idx) => {
+                const monthSum = items.reduce((s, item) => s + getItemPaymentForMonth(item, mKey), 0);
+                if (monthSum > maxPayment) {
+                    maxPayment = monthSum;
+                    maxMonthLabel = monthLabels[idx];
+                }
+            });
+            document.getElementById('stat-peak-month').innerText = maxMonthLabel;
+            document.getElementById('stat-peak-amount').innerText = formatCurrency(maxPayment);
+
+            renderCardSummaryTable();
+            renderSpecificMonthPieChart();
+        }
+
+        function renderCardSummaryTable() {
+            const selectedYear = document.getElementById('card-year-select')?.value || '2026';
+            const yearMonthKeys = monthKeys.filter(k => k.startsWith(selectedYear));
+
+            const theadRow = document.getElementById('card-summary-header');
+            if (!theadRow) return;
+
+            theadRow.innerHTML = `
+                <th class="px-4 py-3 bg-slate-800 font-semibold min-w-[200px] sticky left-0 z-30 shadow">ชื่อบัตรเครดิต</th>
+                <th class="px-3 py-3 bg-slate-800 text-center min-w-[80px]">ตัดรอบ</th>
+                <th class="px-3 py-3 bg-slate-800 text-center min-w-[80px]">ครบกำหนด</th>
+            `;
+
+            for (let m = 0; m < 12; m++) {
+                theadRow.innerHTML += `<th class="px-3 py-3 text-right min-w-[100px]">${thaiMonthShort[m]} ${selectedYear}</th>`;
+            }
+            theadRow.innerHTML += `<th class="px-4 py-3 bg-indigo-950 text-amber-300 text-right min-w-[120px]">รวมทั้งปี</th>`;
+
+            const tbody = document.getElementById('card-summary-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            creditCards.forEach(cardObj => {
+                let cardYearTotal = 0;
+                let rowHtml = `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-4 py-3 font-semibold text-slate-900 sticky left-0 bg-white z-10 shadow-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-credit-card text-indigo-500 text-xs"></i>
+                            <span>${cardObj.name}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center text-xs font-medium text-slate-500">วันที่ ${cardObj.cutDay}</td>
+                        <td class="px-3 py-3 text-center text-xs font-medium text-slate-500">วันที่ ${cardObj.dueDay}</td>
+                `;
+
+                yearMonthKeys.forEach(mKey => {
+                    const cardMonthSum = items
+                        .filter(i => i.card === cardObj.name)
+                        .reduce((sum, item) => sum + getItemPaymentForMonth(item, mKey), 0);
+                    
+                    cardYearTotal += cardMonthSum;
+
+                    rowHtml += `
+                        <td class="px-3 py-3 text-right font-medium ${cardMonthSum > 0 ? 'text-slate-900' : 'text-slate-300'}">
+                            ${cardMonthSum > 0 ? formatCurrency(cardMonthSum) : '-'}
+                        </td>
+                    `;
+                });
+
+                rowHtml += `
+                        <td class="px-4 py-3 text-right font-bold text-indigo-900 bg-indigo-50/50">
+                            ${formatCurrency(cardYearTotal)}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += rowHtml;
+            });
+        }
+
+        function renderSpecificMonthPieChart() {
+            const year = document.getElementById('pie-year-select')?.value || '2026';
+            const monthIdx = parseInt(document.getElementById('pie-month-select')?.value || '6');
+            const monthNum = String(monthIdx + 1).padStart(2, '0');
+            const targetMKey = `${year}-${monthNum}`;
+
+            const monthName = thaiMonthFull[monthIdx];
+            if (document.getElementById('pie-chart-subtitle')) document.getElementById('pie-chart-subtitle').innerText = `สัดส่วนค่าใช้จ่าย ${monthName} ${year}`;
+            if (document.getElementById('pie-details-title')) document.getElementById('pie-details-title').innerText = `สรุปค่าใช้จ่าย ${monthName} ${year}`;
+
+            const categoryTotals = {};
+            let monthGrandTotal = 0;
+
+            categories.forEach(cat => { categoryTotals[cat] = 0; });
+
+            items.forEach(item => {
+                const payment = getItemPaymentForMonth(item, targetMKey);
+                if (payment > 0) {
+                    const cat = item.category || 'อื่นๆ';
+                    categoryTotals[cat] = (categoryTotals[cat] || 0) + payment;
+                    monthGrandTotal += payment;
+                }
+            });
+
+            if (document.getElementById('pie-details-total')) document.getElementById('pie-details-total').innerText = formatCurrency(monthGrandTotal);
+
+            const tbody = document.getElementById('pie-category-breakdown-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const chartLabels = [];
+            const chartData = [];
+            const chartColors = [];
+
+            categories.forEach(cat => {
+                const amt = categoryTotals[cat] || 0;
+                if (amt > 0) {
+                    const pct = monthGrandTotal > 0 ? ((amt / monthGrandTotal) * 100).toFixed(1) : 0;
+                    const color = categoryColors[cat] || '#64748b';
+
+                    chartLabels.push(cat);
+                    chartData.push(amt);
+                    chartColors.push(color);
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-3 py-2.5 font-medium text-slate-800 flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full" style="background-color: ${color}"></span>
+                                <span>${cat}</span>
+                            </td>
+                            <td class="px-3 py-2.5 text-right font-semibold text-slate-900">${formatCurrency(amt)}</td>
+                            <td class="px-3 py-2.5 text-right font-bold text-indigo-600">${pct}%</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (chartData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-slate-400 italic">ไม่มีรายการค่าใช้จ่ายในเดือนนี้</td></tr>`;
+            }
+
+            const canvas = document.getElementById('single-month-pie-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (singlePieChartInstance) {
+                singlePieChartInstance.destroy();
+            }
+
+            if (chartData.length === 0) {
+                singlePieChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['ไม่มีรายการ'],
+                        datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            } else {
+                singlePieChartInstance = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            data: chartData,
+                            backgroundColor: chartColors,
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { family: 'Prompt', size: 11 }, boxWidth: 12 } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderMatrixTable() {
+            const headerRow = document.getElementById('matrix-header-row');
+            if (!headerRow) return;
+
+            headerRow.innerHTML = `
+                <th scope="col" class="px-4 py-3 min-w-[60px] text-center sticky left-0 bg-slate-800 z-30 shadow">ID</th>
+                <th scope="col" class="px-4 py-3 min-w-[220px] sticky left-[60px] bg-slate-800 z-30 shadow">รายการ / ร้านค้า</th>
+                <th scope="col" class="px-4 py-3 min-w-[120px] text-right">ยอดรวม (บาท)</th>
+                <th scope="col" class="px-4 py-3 min-w-[100px] text-center">รูปแบบ</th>
+                <th scope="col" class="px-4 py-3 min-w-[90px] text-center">ผ่อน (เดือน)</th>
+                <th scope="col" class="px-4 py-3 min-w-[120px] text-right bg-indigo-950 font-bold text-amber-300">ยอด/เดือน</th>
+                <th scope="col" class="px-4 py-3 min-w-[110px] text-center">เริ่มชำระ</th>
+            `;
+
+            monthLabels.forEach(label => {
+                headerRow.innerHTML += `<th scope="col" class="px-3 py-3 min-w-[110px] text-right">${label}</th>`;
+            });
+
+            const tbody = document.getElementById('matrix-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const topTotals = monthKeys.map(mKey => {
+                return items.reduce((sum, item) => sum + getItemPaymentForMonth(item, mKey), 0);
+            });
+
+            const grandTotalSpending = items.reduce((s, i) => s + (parseFloat(i.total) || 0), 0);
+            const grandMonthlyPayment = items.reduce((s, i) => s + (parseFloat(i.monthly) || 0), 0);
+
+            let summaryRowHtml = `
+                <tr class="bg-indigo-900 text-white font-bold sticky top-[41px] z-20 shadow-md">
+                    <td class="px-4 py-3 text-center sticky left-0 bg-indigo-900 z-30">#</td>
+                    <td class="px-4 py-3 sticky left-[60px] bg-indigo-900 z-30 font-bold text-amber-300">รวมยอดต้องชำระรายเดือน</td>
+                    <td class="px-4 py-3 text-right text-amber-300">${formatCurrency(grandTotalSpending)}</td>
+                    <td class="px-4 py-3 text-center">-</td>
+                    <td class="px-4 py-3 text-center">-</td>
+                    <td class="px-4 py-3 text-right bg-indigo-950 text-amber-400">${formatCurrency(grandMonthlyPayment)}</td>
+                    <td class="px-4 py-3 text-center">-</td>
+            `;
+
+            topTotals.forEach(tot => {
+                summaryRowHtml += `<td class="px-3 py-3 text-right font-extrabold text-amber-300">${formatCurrency(tot)}</td>`;
+            });
+            summaryRowHtml += `</tr>`;
+            tbody.innerHTML += summaryRowHtml;
+
+            items.forEach(item => {
+                let rowHtml = `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-200">
+                        <td class="px-4 py-3 text-center font-medium text-slate-500 sticky left-0 bg-white z-10 shadow-sm">${item.id}</td>
+                        <td class="px-4 py-3 font-semibold text-slate-900 sticky left-[60px] bg-white z-10 shadow-sm">${item.name}</td>
+                        <td class="px-4 py-3 text-right font-medium text-slate-800">${formatCurrency(item.total)}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="text-xs px-2 py-0.5 rounded-full ${item.format === 'ผ่อนชำระ' ? 'bg-amber-100 text-amber-800 font-medium' : 'bg-slate-100 text-slate-600'}">
+                                ${item.format}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center font-medium">${item.months}</td>
+                        <td class="px-4 py-3 text-right font-bold text-indigo-600 bg-indigo-50/30">${formatCurrency(item.monthly)}</td>
+                        <td class="px-4 py-3 text-center text-xs font-medium text-slate-500">${item.startMonth}</td>
+                `;
+
+                monthKeys.forEach(mKey => {
+                    const payment = getItemPaymentForMonth(item, mKey);
+                    rowHtml += `
+                        <td class="px-3 py-3 text-right font-medium ${payment > 0 ? 'text-slate-900 font-semibold' : 'text-slate-300'}">
+                            ${payment > 0 ? formatCurrency(payment) : '-'}
+                        </td>
+                    `;
+                });
+
+                rowHtml += `</tr>`;
+                tbody.innerHTML += rowHtml;
+            });
+        }
+
+        function openCardModal(index = -1) {
+            document.getElementById('card-edit-index').value = index;
+            if (index >= 0 && index < creditCards.length) {
+                const card = creditCards[index];
+                document.getElementById('card-modal-title').innerText = 'แก้ไขข้อมูลบัตรเครดิต';
+                document.getElementById('card-input-name').value = card.name;
+                document.getElementById('card-input-cut').value = card.cutDay;
+                document.getElementById('card-input-due').value = card.dueDay;
+                document.getElementById('card-input-limit').value = card.limit;
+            } else {
+                document.getElementById('card-modal-title').innerText = 'เพิ่มบัตรเครดิตใหม่';
+                document.getElementById('card-input-name').value = '';
+                document.getElementById('card-input-cut').value = '';
+                document.getElementById('card-input-due').value = '';
+                document.getElementById('card-input-limit').value = 100000;
+            }
+            document.getElementById('card-modal').classList.remove('hidden');
+        }
+
+        function closeCardModal() {
+            document.getElementById('card-modal').classList.add('hidden');
+        }
+
+        function handleSaveCard(e) {
+            e.preventDefault();
+            const index = parseInt(document.getElementById('card-edit-index').value);
+            const name = document.getElementById('card-input-name').value.trim();
+            const cutDay = parseInt(document.getElementById('card-input-cut').value) || 1;
+            const dueDay = parseInt(document.getElementById('card-input-due').value) || 1;
+            const limit = parseFloat(document.getElementById('card-input-limit').value) || 0;
+
+            if (!name) return;
+
+            if (index >= 0 && index < creditCards.length) {
+                const oldName = creditCards[index].name;
+                creditCards[index] = { name, cutDay, dueDay, limit };
+                items.forEach(item => { if (item.card === oldName) item.card = name; });
+                showToast(`แก้ไขข้อมูลบัตร "${name}" เรียบร้อย!`);
+            } else {
+                creditCards.push({ name, cutDay, dueDay, limit });
+                showToast(`เพิ่มบัตรเครดิต "${name}" เรียบร้อย!`);
+            }
+
+            saveStateToCloudAndLocal();
+            populateFormDropdowns();
+            renderCardsAndCategoriesSettings();
+            closeCardModal();
+        }
+
+        function deleteCard(index) {
+            if (index < 0 || index >= creditCards.length) return;
+            const cardName = creditCards[index].name;
+            creditCards.splice(index, 1);
+            saveStateToCloudAndLocal();
+            populateFormDropdowns();
+            renderCardsAndCategoriesSettings();
+            showToast(`ลบบัตร "${cardName}" เรียบร้อย`);
+        }
+
+        function openCatModal() {
+            document.getElementById('cat-input-name').value = '';
+            document.getElementById('cat-input-color').value = '#6366f1';
+            document.getElementById('cat-modal').classList.remove('hidden');
+        }
+
+        function closeCatModal() {
+            document.getElementById('cat-modal').classList.add('hidden');
+        }
+
+        function handleSaveCat(e) {
+            e.preventDefault();
+            const name = document.getElementById('cat-input-name').value.trim();
+            const color = document.getElementById('cat-input-color').value;
+
+            if (!name) return;
+            if (categories.includes(name)) {
+                showToast('มีหมวดหมู่นี้ในระบบแล้วครับ');
+                return;
+            }
+
+            categories.push(name);
+            categoryColors[name] = color;
+
+            saveStateToCloudAndLocal();
+            populateFormDropdowns();
+            renderCardsAndCategoriesSettings();
+            closeCatModal();
+            showToast(`เพิ่มหมวดหมู่ "${name}" เรียบร้อย!`);
+        }
+
+        function deleteCat(index) {
+            if (index < 0 || index >= categories.length) return;
+            const catName = categories[index];
+            categories.splice(index, 1);
+            delete categoryColors[catName];
+            saveStateToCloudAndLocal();
+            populateFormDropdowns();
+            renderCardsAndCategoriesSettings();
+            showToast(`ลบหมวดหมู่ "${catName}" เรียบร้อย`);
+        }
+
+        function renderCardsAndCategoriesSettings() {
+            if (document.getElementById('card-count-badge')) document.getElementById('card-count-badge').innerText = creditCards.length;
+            if (document.getElementById('cat-count-badge')) document.getElementById('cat-count-badge').innerText = categories.length;
+
+            const tbodyCards = document.getElementById('cards-settings-tbody');
+            if (tbodyCards) {
+                tbodyCards.innerHTML = '';
+                creditCards.forEach((card, idx) => {
+                    tbodyCards.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-4 py-3 font-semibold text-slate-900 flex items-center space-x-2">
+                                <i class="fa-solid fa-credit-card text-indigo-500 text-xs"></i>
+                                <span>${card.name}</span>
+                            </td>
+                            <td class="px-4 py-3 text-center font-medium text-slate-700">วันที่ ${card.cutDay}</td>
+                            <td class="px-4 py-3 text-center font-medium text-slate-700">วันที่ ${card.dueDay}</td>
+                            <td class="px-4 py-3 text-right font-bold text-emerald-600">${formatCurrency(card.limit)}</td>
+                            <td class="px-4 py-3 text-center space-x-1">
+                                <button onclick="openCardModal(${idx})" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="แก้ไข">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteCard(${idx})" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition" title="ลบ">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const catContainer = document.getElementById('categories-list-container');
+            if (catContainer) {
+                catContainer.innerHTML = '';
+                categories.forEach((cat, idx) => {
+                    const color = categoryColors[cat] || '#64748b';
+                    catContainer.innerHTML += `
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-3.5 h-3.5 rounded-full shadow-sm" style="background-color: ${color}"></span>
+                                <span class="font-semibold text-slate-800 text-sm">${cat}</span>
+                            </div>
+                            <button onclick="deleteCat(${idx})" class="text-slate-400 hover:text-rose-600 p-1 transition" title="ลบหมวดหมู่">
+                                <i class="fa-solid fa-xmark text-sm"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function renderItemsTable() {
+            const tbody = document.getElementById('items-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const searchTerm = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+            const filterCard = document.getElementById('filter-card-select')?.value || '';
+            const filterCat = document.getElementById('filter-cat-select')?.value || '';
+
+            if (document.getElementById('items-count-badge')) document.getElementById('items-count-badge').innerText = items.length;
+            if (document.getElementById('items-used-count')) document.getElementById('items-used-count').innerText = items.length;
+
+            const filteredItems = items.filter(item => {
+                const matchName = item.name.toLowerCase().includes(searchTerm);
+                const matchCard = !filterCard || item.card === filterCard;
+                const matchCat = !filterCat || item.category === filterCat;
+                return matchName && matchCard && matchCat;
+            });
+
+            if (filteredItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="px-4 py-8 text-center text-slate-400 italic">ไม่พบรายการที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="px-4 py-3 text-center font-medium text-slate-500">${item.id}</td>
+                    <td class="px-4 py-3 text-center text-xs font-semibold text-slate-700">${item.date || '-'}</td>
+                    <td class="px-4 py-3 font-semibold text-slate-900">${item.name}</td>
+                    <td class="px-4 py-3"><span class="bg-indigo-50 text-indigo-700 font-medium text-xs px-2.5 py-1 rounded-lg border border-indigo-100">${item.card}</span></td>
+                    <td class="px-4 py-3 text-xs text-slate-600 font-medium">${item.category}</td>
+                    <td class="px-4 py-3 text-right font-medium text-slate-900">${formatCurrency(item.total)}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-xs px-2 py-0.5 rounded-full ${item.format === 'ผ่อนชำระ' ? 'bg-amber-100 text-amber-800 font-medium' : 'bg-slate-100 text-slate-600'}">
+                            ${item.format}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center font-medium">${item.months}</td>
+                    <td class="px-4 py-3 text-right font-bold text-indigo-600">${formatCurrency(item.monthly)}</td>
+                    <td class="px-4 py-3 text-center text-xs font-medium text-slate-500">${item.startMonth}</td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="deleteItem(${item.id})" class="text-rose-600 hover:text-rose-800 transition p-1.5 rounded hover:bg-rose-50" title="ลบรายการ">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function autoSetStartMonthByDate() {
+            const dateVal = document.getElementById('input-date')?.value;
+            const cardName = document.getElementById('input-card')?.value;
+            if (!dateVal) return;
+
+            const targetKey = calculateDueMonth(dateVal, cardName);
+            const startMonthSelect = document.getElementById('input-start-month');
+            
+            if (startMonthSelect && monthKeys.includes(targetKey)) {
+                startMonthSelect.value = targetKey;
+            }
+
+            const helper = document.getElementById('due-month-helper');
+            if (helper) {
+                const cardObj = creditCards.find(c => c.name === cardName);
+                if (cardObj) {
+                    helper.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i><span>คำนวณตัดรอบ (วันที่ ${cardObj.cutDay}) จ่ายจริงวันที่ ${cardObj.dueDay} ของเดือน <strong>${targetKey}</strong></span>`;
+                } else {
+                    helper.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>เริ่มชำระงวดแรกเดือน ${targetKey}</span>`;
+                }
+            }
+        }
+
+        function toggleMonthsInput() {
+            const format = document.getElementById('input-format').value;
+            const monthsInput = document.getElementById('input-months');
+            if (format === 'จ่ายเต็ม') {
+                monthsInput.value = 1;
+                monthsInput.disabled = true;
+            } else {
+                monthsInput.disabled = false;
+                if (monthsInput.value === '1') monthsInput.value = 10;
+            }
+        }
+
+        function handleAddItem(event) {
+            event.preventDefault();
+            if (items.length >= MAX_ITEMS_CAPACITY) {
+                showToast('ระบบรองรับสูงสุด 10,000 รายการครับ');
+                return;
+            }
+
+            const date = document.getElementById('input-date').value;
+            const name = document.getElementById('input-name').value.trim();
+            const card = document.getElementById('input-card').value;
+            const category = document.getElementById('input-category').value;
+            const total = parseFloat(document.getElementById('input-total').value);
+            const format = document.getElementById('input-format').value;
+            let months = parseInt(document.getElementById('input-months').value) || 1;
+            const startMonth = document.getElementById('input-start-month').value;
+
+            if (format === 'จ่ายเต็ม') months = 1;
+            const monthly = calculateMonthlyPayment(total, format, months);
+
+            const newItem = {
+                id: items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1,
+                date,
+                name,
+                card,
+                category,
+                total,
+                format,
+                months,
+                monthly,
+                startMonth
+            };
+
+            items.push(newItem);
+            saveStateToCloudAndLocal();
+            clearForm();
+            refreshCurrentUI();
+            showToast('บันทึกรายการสำเร็จเรียบร้อย!');
+        }
+
+        function clearForm() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (document.getElementById('input-date')) document.getElementById('input-date').value = todayStr;
+            if (document.getElementById('input-name')) document.getElementById('input-name').value = '';
+            if (document.getElementById('input-total')) document.getElementById('input-total').value = '';
+            if (document.getElementById('input-format')) document.getElementById('input-format').value = 'ผ่อนชำระ';
+            if (document.getElementById('input-months')) {
+                document.getElementById('input-months').disabled = false;
+                document.getElementById('input-months').value = 10;
+            }
+            autoSetStartMonthByDate();
+        }
+
+        function deleteItem(id) {
+            items = items.filter(i => i.id !== id);
+            saveStateToCloudAndLocal();
+            refreshCurrentUI();
+            showToast('ลบรายการเรียบร้อยแล้ว');
+        }
+
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    const sheetName = workbook.SheetNames.find(s => s.includes('รายการค่าใช้จ่าย')) || workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (!jsonData || jsonData.length < 2) {
+                        showToast('ไม่พบข้อมูลรายการในไฟล์ Excel');
+                        return;
+                    }
+
+                    const headers = jsonData[0].map(h => String(h || '').trim().toLowerCase());
+                    let dateIdx = headers.findIndex(h => h.includes('วัน') || h.includes('date'));
+                    let nameIdx = headers.findIndex(h => h.includes('รายการ') || h.includes('ร้านค้า'));
+                    let cardIdx = headers.findIndex(h => h.includes('บัตร'));
+                    let catIdx = headers.findIndex(h => h.includes('หมวด'));
+                    let totalIdx = headers.findIndex(h => h.includes('ยอดรวม') || h.includes('จำนวนเงิน'));
+                    let formatIdx = headers.findIndex(h => h.includes('รูปแบบ'));
+                    let monthsIdx = headers.findIndex(h => h.includes('ผ่อน') || h.includes('งวด'));
+                    let startMonthIdx = headers.findIndex(h => h.includes('เริ่ม') || h.includes('เดือน'));
+
+                    if (nameIdx === -1) nameIdx = 2;
+                    if (cardIdx === -1) cardIdx = 3;
+                    if (catIdx === -1) catIdx = 4;
+                    if (totalIdx === -1) totalIdx = 5;
+                    if (formatIdx === -1) formatIdx = 6;
+                    if (monthsIdx === -1) monthsIdx = 7;
+                    if (startMonthIdx === -1) startMonthIdx = 9;
+
+                    const importedItems = [];
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (!row || row.length < 2) continue;
+
+                        const name = String(row[nameIdx] || '').trim();
+                        if (!name || name === 'รวมยอดต้องชำระรายเดือน' || name === '#') continue;
+
+                        const id = parseInt(row[0]) || (importedItems.length + 1);
+                        let date = dateIdx !== -1 ? String(row[dateIdx] || '').trim() : new Date().toISOString().split('T')[0];
+                        if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) date = new Date().toISOString().split('T')[0];
+
+                        let card = String(row[cardIdx] || '').trim();
+                        if (!creditCards.some(c => c.name === card)) card = creditCards[0].name;
+
+                        let category = String(row[catIdx] || '').trim();
+                        if (!categories.includes(category)) category = categories[0];
+
+                        const total = parseFloat(row[totalIdx]) || 0;
+                        const format = String(row[formatIdx] || 'ผ่อนชำระ').trim();
+                        const months = parseInt(row[monthsIdx]) || 1;
+                        const monthly = calculateMonthlyPayment(total, format, months);
+                        let startMonth = String(row[startMonthIdx] || '2026-01').trim();
+                        if (!startMonth.match(/^\d{4}-\d{2}$/)) startMonth = '2026-01';
+
+                        importedItems.push({
+                            id,
+                            date,
+                            name,
+                            card,
+                            category,
+                            total,
+                            format,
+                            months,
+                            monthly,
+                            startMonth
+                        });
+                    }
+
+                    if (importedItems.length > 0) {
+                        items = importedItems;
+                        saveStateToCloudAndLocal();
+                        refreshCurrentUI();
+                        showToast(`นำเข้าข้อมูลจาก Excel สำเร็จ ${importedItems.length} รายการ!`);
+                    } else {
+                        showToast('ไม่พบรูปแบบตารางที่ถูกต้องในไฟล์ Excel');
+                    }
+                } catch (err) {
+                    console.error("Error importing Excel:", err);
+                    showToast('เกิดข้อผิดพลาดในการเปิดอ่านไฟล์ Excel');
+                }
+                event.target.value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportToExcel() {
+            try {
+                const wb = XLSX.utils.book_new();
+
+                const itemsSheetData = [
+                    ['ID', 'วันที่ซื้อ', 'รายการ / ร้านค้า', 'บัตรเครดิต', 'หมวดหมู่', 'ยอดรวม (บาท)', 'รูปแบบ', 'ผ่อน (เดือน)', 'ยอดจ่าย/เดือน', 'เดือนเริ่มชำระ']
+                ];
+                items.forEach(i => {
+                    itemsSheetData.push([i.id, i.date || '-', i.name, i.card, i.category, i.total, i.format, i.months, i.monthly, i.startMonth]);
+                });
+                const wsItems = XLSX.utils.aoa_to_sheet(itemsSheetData);
+                XLSX.utils.book_append_sheet(wb, wsItems, "รายการค่าใช้จ่าย");
+
+                const matrixSheetData = [
+                    ['ID', 'รายการ / ร้านค้า', 'ยอดรวม', 'รูปแบบ', 'ผ่อน (เดือน)', 'ยอด/เดือน', 'เริ่มชำระ', ...monthLabels]
+                ];
+
+                const topTotals = monthKeys.map(mKey => items.reduce((s, item) => s + getItemPaymentForMonth(item, mKey), 0));
+                const grandTotalSpending = items.reduce((s, i) => s + i.total, 0);
+                const grandMonthlyPayment = items.reduce((s, i) => s + i.monthly, 0);
+
+                matrixSheetData.push(['#', 'รวมยอดต้องชำระรายเดือน', grandTotalSpending, '-', '-', grandMonthlyPayment, '-', ...topTotals]);
+
+                items.forEach(item => {
+                    const row = [item.id, item.name, item.total, item.format, item.months, item.monthly, item.startMonth];
+                    monthKeys.forEach(mKey => {
+                        row.push(getItemPaymentForMonth(item, mKey));
+                    });
+                    matrixSheetData.push(row);
+                });
+
+                const wsMatrix = XLSX.utils.aoa_to_sheet(matrixSheetData);
+                XLSX.utils.book_append_sheet(wb, wsMatrix, "ตารางผ่อนชำระ_5ปี");
+
+                const cardHeaderRow = ['บัตรเครดิต / เดือน', 'วันตัดรอบ', 'วันครบกำหนด', ...monthLabels];
+                const cardSheetData = [cardHeaderRow];
+
+                creditCards.forEach(cardObj => {
+                    const row = [cardObj.name, cardObj.cutDay, cardObj.dueDay];
+                    monthKeys.forEach(mKey => {
+                        const sumCard = items.filter(i => i.card === cardObj.name).reduce((s, i) => s + getItemPaymentForMonth(i, mKey), 0);
+                        row.push(sumCard);
+                    });
+                    cardSheetData.push(row);
+                });
+
+                const wsCard = XLSX.utils.aoa_to_sheet(cardSheetData);
+                XLSX.utils.book_append_sheet(wb, wsCard, "สรุปแยกตามบัตรเครดิต");
+
+                const catSummaryData = [['หมวดหมู่ / เดือน', ...monthLabels]];
+                categories.forEach(cat => {
+                    const row = [cat];
+                    monthKeys.forEach(mKey => {
+                        const sumCat = items.filter(i => i.category === cat).reduce((s, i) => s + getItemPaymentForMonth(i, mKey), 0);
+                        row.push(sumCat);
+                    });
+                    catSummaryData.push(row);
+                });
+
+                const wsCat = XLSX.utils.aoa_to_sheet(catSummaryData);
+                XLSX.utils.book_append_sheet(wb, wsCat, "สรุปหมวดหมู่รายเดือน");
+
+                const cardSettingsData = [['ชื่อบัตรเครดิต', 'วันตัดรอบ (ทุกวันที่)', 'วันครบกำหนดชำระ (ทุกวันที่)', 'วงเงินบัตร (บาท)']];
+                creditCards.forEach(c => {
+                    cardSettingsData.push([c.name, c.cutDay, c.dueDay, c.limit]);
+                });
+                const wsCardSettings = XLSX.utils.aoa_to_sheet(cardSettingsData);
+                XLSX.utils.book_append_sheet(wb, wsCardSettings, "ตั้งค่าบัตรเครดิต");
+
+                XLSX.writeFile(wb, "credit_Krapong_dashboard_5years.xlsx");
+                showToast('ดาวน์โหลดไฟล์ Excel (.xlsx) สำเร็จเรียบร้อย!');
+            } catch (err) {
+                console.error("Error exporting Excel:", err);
+                showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ Excel');
+            }
+        }
+
+        // Attach Functions to Global Window Object
+        window.switchTab = switchTab;
+        window.renderDashboard = renderDashboard;
+        window.renderCardSummaryTable = renderCardSummaryTable;
+        window.renderSpecificMonthPieChart = renderSpecificMonthPieChart;
+        window.renderMatrixTable = renderMatrixTable;
+        window.openCardModal = openCardModal;
+        window.closeCardModal = closeCardModal;
+        window.handleSaveCard = handleSaveCard;
+        window.deleteCard = deleteCard;
+        window.openCatModal = openCatModal;
+        window.closeCatModal = closeCatModal;
+        window.handleSaveCat = handleSaveCat;
+        window.deleteCat = deleteCat;
+        window.renderCardsAndCategoriesSettings = renderCardsAndCategoriesSettings;
+        window.renderItemsTable = renderItemsTable;
+        window.autoSetStartMonthByDate = autoSetStartMonthByDate;
+        window.toggleMonthsInput = toggleMonthsInput;
+        window.handleAddItem = handleAddItem;
+        window.clearForm = clearForm;
+        window.deleteItem = deleteItem;
+        window.importFromExcel = importFromExcel;
+        window.exportToExcel = exportToExcel;
+
+        // Initialize App & Cloud Sync on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            initCloudSync();
+            populateFormDropdowns();
+            clearForm();
+        });
+    </script>
+</body>
+</html>
