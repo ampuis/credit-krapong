@@ -296,8 +296,8 @@
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-chart-pie text-violet-500 text-xl"></i>
                         <div>
-                            <h2 class="text-base font-bold text-slate-800 dark:text-white">แผนภูมิวงกลมแสดงสัดส่วนค่าใช้จ่ายแยกตามหมวดหมู่รายเดือน</h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิมิวงกลมสัดส่วนการใช้จ่ายรายหมวดหมู่แบบรายละเอียด</p>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-white">แผนภูมิวรกลมแสดงสัดส่วนค่าใช้จ่ายแยกตามหมวดหมู่รายเดือน</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">เลือกปีและเดือนที่ต้องการเพื่อดูแผนภูมิมิวรกลมสัดส่วนการใช้จ่ายรายหมวดหมู่แบบรายละเอียด</p>
                         </div>
                     </div>
 
@@ -787,6 +787,12 @@
         let isFirebaseConnected = false;
         let donutChartInstance = null;
 
+        // Helper function to convert category name into a safe Firestore Document ID (handling '/' and special chars)
+        function getCatDocId(name) {
+            if (!name) return 'cat-unknown';
+            return 'cat-' + encodeURIComponent(name).replace(/\//g, '_').replace(/\./g, '_');
+        }
+
         // Thai Month Names Mapping
         const thaiMonthsFull = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
         const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
@@ -1014,19 +1020,21 @@
 
             db.collection('categories').onSnapshot(snapshot => {
                 const cloudCats = [];
-                snapshot.forEach(doc => cloudCats.push({ id: doc.id, ...doc.data() }));
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data && data.name) cloudCats.push(data);
+                });
                 if (cloudCats.length > 0) {
                     const catMap = new Map();
                     defaultCategories.forEach(c => catMap.set(c.name, c));
-                    categories.forEach(c => catMap.set(c.name, c));
                     cloudCats.forEach(c => catMap.set(c.name, c));
                     categories = Array.from(catMap.values());
                     saveLocalStorageData();
                     renderAllViews();
                 } else {
-                    // Seed default categories to Firestore if empty
-                    categories.forEach(cat => {
-                        syncToFirestore('categories', cat.name, cat);
+                    // Seed default categories to Firestore if empty with safe docId
+                    defaultCategories.forEach(cat => {
+                        syncToFirestore('categories', getCatDocId(cat.name), cat);
                     });
                 }
             });
@@ -1034,7 +1042,17 @@
 
         function syncToFirestore(col, id, data) {
             if (isFirebaseConnected && db && currentUser) {
-                db.collection(col).doc(id).set(data, { merge: true });
+                db.collection(col).doc(id).set(data, { merge: true }).catch(err => {
+                    console.error(`Firestore Sync Error [${col}/${id}]:`, err);
+                });
+            }
+        }
+
+        function deleteFromFirestore(col, id) {
+            if (isFirebaseConnected && db && currentUser) {
+                db.collection(col).doc(id).delete().catch(err => {
+                    console.error(`Firestore Delete Error [${col}/${id}]:`, err);
+                });
             }
         }
 
@@ -1282,7 +1300,9 @@
 
             const tbody = document.getElementById('categoryTableBody');
             tbody.innerHTML = '';
-            const catKeys = Object.keys(categoryTotals);
+            
+            // Sort categories by amount from High to Low (เรียงลำดับจากมากไปน้อย)
+            const catKeys = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a]);
 
             if (catKeys.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400">ไม่มีรายการชำระเงินในเดือนนี้</td></tr>`;
@@ -1306,7 +1326,7 @@
                 });
             }
 
-            // Donut Chart Render
+            // Donut Chart Render (Sorted High to Low)
             const ctx = document.getElementById('categoryDonutChart').getContext('2d');
             if (donutChartInstance) donutChartInstance.destroy();
 
@@ -1525,9 +1545,9 @@
             cat.name = trimmedNewName;
             
             if (trimmedNewName !== oldName) {
-                deleteFromFirestore('categories', oldName);
+                deleteFromFirestore('categories', getCatDocId(oldName));
             }
-            syncToFirestore('categories', trimmedNewName, cat);
+            syncToFirestore('categories', getCatDocId(trimmedNewName), cat);
 
             // อัปเดตรายการค่าใช้จ่ายเดิมทั้งหมดที่ใช้หมวดหมู่นี้
             items.forEach(item => {
@@ -1558,8 +1578,8 @@
             categories.push(catObj);
             saveLocalStorageData();
 
-            // Sync all current categories to Firestore so none are missing
-            categories.forEach(c => syncToFirestore('categories', c.name, c));
+            // Sync to Firestore using safe docId
+            syncToFirestore('categories', getCatDocId(name), catObj);
 
             document.getElementById('newCatName').value = '';
             renderAllViews();
@@ -1570,7 +1590,7 @@
             if (confirm(`คุณต้องการลบหมวดหมู่ "${catName}" ใช่หรือไม่?`)) {
                 categories = categories.filter(c => c.name !== catName);
                 saveLocalStorageData();
-                deleteFromFirestore('categories', catName);
+                deleteFromFirestore('categories', getCatDocId(catName));
                 renderAllViews();
             }
         }
