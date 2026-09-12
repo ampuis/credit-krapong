@@ -374,7 +374,7 @@
                             <i class="fa-solid fa-calendar-days text-indigo-600 dark:text-indigo-400 text-lg"></i>
                             <h2 class="text-base font-bold text-slate-800 dark:text-white">ตารางประมาณการภาระผ่อนชำระรายเดือน (2026 - 2030)</h2>
                         </div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">คลิกที่ตัวเลขยอดเงินในแต่ละช่องเดือนเพื่อดูรายละเอียดรายการผ่อน และงวดผ่อนหมด</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">คำนวณเฉพาะรายการผ่อนชำระ (ไม่รวมรายการชำระเต็มจำนวน) • คลิกที่ตัวเลขยอดเงินเพื่อดูรายละเอียด</p>
                     </div>
 
                     <!-- Filter Controls (Card & Year Filter Selector) -->
@@ -1507,8 +1507,10 @@
             const selectedCardId = document.getElementById('plannerCardFilter')?.value || 'ALL';
             const years = selectedYear === 'ALL' ? [2026, 2027, 2028, 2029, 2030] : [parseInt(selectedYear)];
 
-            // Filter items by selected card
+            // Filter items by selected card and ONLY installment items (excluding full payments)
             const activeItems = items.filter(item => {
+                const isInstallment = item.payType !== 'full' && parseInt(item.months) > 1;
+                if (!isInstallment) return false;
                 if (selectedCardId !== 'ALL' && item.cardId !== selectedCardId) return false;
                 return true;
             });
@@ -1570,13 +1572,15 @@
             const cardNameStr = card ? ` • บัตร: ${card.name}` : ' • ทุกบัตรเครดิต';
 
             title.innerText = `รายละเอียดรายการผ่อนชำระ: ${thaiMonthsFull[month - 1]} ${year}`;
-            subtitle.innerText = `รายการที่ต้องชำระในรอบเดือน ${thaiMonthsShort[month - 1]} ${year}${cardNameStr}`;
+            subtitle.innerText = `รายการผ่อนที่ต้องชำระในรอบเดือน ${thaiMonthsShort[month - 1]} ${year}${cardNameStr}`;
 
             tbody.innerHTML = '';
             let totalMonthAmount = 0;
             let matchedCount = 0;
 
             items.forEach(item => {
+                const isInstallment = item.payType !== 'full' && parseInt(item.months) > 1;
+                if (!isInstallment) return;
                 if (cardId && cardId !== 'ALL' && item.cardId !== cardId) return;
 
                 const monthlyPay = item.totalAmount / item.months;
