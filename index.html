@@ -474,10 +474,8 @@
                     <table class="w-full text-left border-collapse text-xs sm:text-sm">
                         <thead>
                             <tr class="bg-slate-900 text-slate-200 border-b border-slate-800 uppercase tracking-wider sticky top-0 z-20">
-                                <th class="p-3 sm:p-4 font-semibold sticky left-0 bg-slate-900 z-30 min-w-[180px]">รายการ / หมวดหมู่</th>
-                                <th class="p-3 font-semibold text-center whitespace-nowrap">บัตรเครดิต</th>
-                                <th class="p-3 font-semibold text-right whitespace-nowrap">ยอดผ่อน/ด.</th>
-                                <th class="p-3 font-semibold text-center whitespace-nowrap min-w-[150px]">ช่วงเวลาผ่อน</th>
+                                <th class="p-3 sm:p-4 font-semibold sticky left-0 bg-slate-900 z-30 min-w-[220px]">รายการ / หมวดหมู่</th>
+                                <th class="p-3 font-semibold text-center whitespace-nowrap min-w-[130px]">บัตรเครดิต</th>
                                 <th class="p-2.5 font-semibold text-center whitespace-nowrap">ม.ค.</th>
                                 <th class="p-2.5 font-semibold text-center whitespace-nowrap">ก.พ.</th>
                                 <th class="p-2.5 font-semibold text-center whitespace-nowrap">มี.ค.</th>
@@ -775,14 +773,48 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ยอดรวมทั้งหมด (บาท) *</label>
-                        <input type="number" step="0.01" id="itemTotalAmount" required placeholder="36000" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ยอดเงินต้น/ราคาซื้อ (บาท) *</label>
+                        <input type="number" step="0.01" id="itemTotalAmount" required placeholder="36000" oninput="updateInterestCalculation()" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div id="itemMonthsContainer">
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">จำนวนงวด (เดือน) *</label>
-                        <input type="number" min="1" max="60" id="itemMonths" value="10" required placeholder="10" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                        <input type="number" min="1" max="60" id="itemMonths" value="10" required placeholder="10" oninput="updateInterestCalculation()" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div id="itemInterestContainer">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ดอกเบี้ย (% ต่อเดือน)</label>
+                        <input type="number" step="0.01" min="0" id="itemInterestRate" value="0" placeholder="เช่น 0, 0.67, 0.74" oninput="updateInterestCalculation()" class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Real-time Interest & Monthly Calculation Preview Box -->
+                <div id="interestSummaryCard" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 text-xs transition-all">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-600">
+                        <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-calculator text-indigo-500"></i> สรุปคำนวณดอกเบี้ย & ยอดผ่อนจริง
+                        </span>
+                        <span id="previewInterestRateBadge" class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold text-[11px]">
+                            ดอกเบี้ย 0.00% / เดือน
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2.5">
+                        <div>
+                            <div class="text-[10px] text-slate-400">เงินต้น</div>
+                            <div id="previewPrincipal" class="font-bold text-slate-800 dark:text-white">฿0.00</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400">ดอกเบี้ยรวม (<span id="previewMonthsLabel">10</span> งวด)</div>
+                            <div id="previewTotalInterest" class="font-bold text-amber-600 dark:text-amber-400">+฿0.00</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400">ยอดรวมทั้งสิ้น</div>
+                            <div id="previewTotalWithInterest" class="font-bold text-slate-800 dark:text-white">฿0.00</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400">ผ่อนต่องวด</div>
+                            <div id="previewMonthlyPayment" class="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm">฿0.00 / ด.</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1277,9 +1309,79 @@
             }
         }
 
-        function deleteFromFirestore(col, id) {
-            if (isFirebaseConnected && db && currentUser) {
-                db.collection(col).doc(id).delete();
+        function getItemPrincipal(item) {
+            return parseFloat(item.principal !== undefined && item.principal !== null ? item.principal : (item.totalAmount || 0));
+        }
+
+        function getItemInterestRate(item) {
+            return parseFloat(item.interestRate || 0);
+        }
+
+        function getItemTotalInterest(item) {
+            if (item.interestAmount !== undefined && item.interestAmount !== null) {
+                return parseFloat(item.interestAmount);
+            }
+            const principal = getItemPrincipal(item);
+            const rate = getItemInterestRate(item);
+            const months = parseInt(item.months || 1);
+            if (item.payType === 'full' || months <= 1 || rate <= 0) return 0;
+            return Math.round((principal * (rate / 100) * months) * 100) / 100;
+        }
+
+        function getItemTotalWithInterest(item) {
+            if (item.totalWithInterest !== undefined && item.totalWithInterest !== null) {
+                return parseFloat(item.totalWithInterest);
+            }
+            const principal = getItemPrincipal(item);
+            const interest = getItemTotalInterest(item);
+            return Math.round((principal + interest) * 100) / 100;
+        }
+
+        function getItemMonthlyPayment(item) {
+            if (item.monthlyPayment !== undefined && item.monthlyPayment !== null) {
+                return parseFloat(item.monthlyPayment);
+            }
+            const total = getItemTotalWithInterest(item);
+            const months = parseInt(item.months || 1);
+            return months > 0 ? (Math.round((total / months) * 100) / 100) : total;
+        }
+
+        function updateInterestCalculation() {
+            const payType = document.querySelector('input[name="paymentType"]:checked')?.value || 'installment';
+            const principal = parseFloat(document.getElementById('itemTotalAmount')?.value) || 0;
+            const months = payType === 'full' ? 1 : (parseInt(document.getElementById('itemMonths')?.value) || 1);
+            const rate = payType === 'full' ? 0 : (parseFloat(document.getElementById('itemInterestRate')?.value) || 0);
+
+            const monthlyInterest = (rate > 0) ? (principal * (rate / 100)) : 0;
+            const totalInterest = Math.round((monthlyInterest * months) * 100) / 100;
+            const totalWithInterest = Math.round((principal + totalInterest) * 100) / 100;
+            const monthlyPayment = months > 0 ? Math.round((totalWithInterest / months) * 100) / 100 : totalWithInterest;
+
+            const previewPrincipalEl = document.getElementById('previewPrincipal');
+            const previewMonthsLabelEl = document.getElementById('previewMonthsLabel');
+            const previewInterestRateBadgeEl = document.getElementById('previewInterestRateBadge');
+            const previewTotalInterestEl = document.getElementById('previewTotalInterest');
+            const previewTotalWithInterestEl = document.getElementById('previewTotalWithInterest');
+            const previewMonthlyPaymentEl = document.getElementById('previewMonthlyPayment');
+
+            if (previewPrincipalEl) previewPrincipalEl.innerText = '฿' + principal.toLocaleString('th-TH', {minimumFractionDigits: 2});
+            if (previewMonthsLabelEl) previewMonthsLabelEl.innerText = months.toString();
+            if (previewInterestRateBadgeEl) {
+                previewInterestRateBadgeEl.innerText = `ดอกเบี้ย ${rate.toFixed(2)}% / เดือน`;
+                if (rate > 0) {
+                    previewInterestRateBadgeEl.className = 'px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200 font-bold text-[11px]';
+                } else {
+                    previewInterestRateBadgeEl.className = 'px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold text-[11px]';
+                }
+            }
+            if (previewTotalInterestEl) {
+                previewTotalInterestEl.innerText = totalInterest > 0 ? `+฿${totalInterest.toLocaleString('th-TH', {minimumFractionDigits: 2})}` : '฿0.00';
+            }
+            if (previewTotalWithInterestEl) {
+                previewTotalWithInterestEl.innerText = '฿' + totalWithInterest.toLocaleString('th-TH', {minimumFractionDigits: 2});
+            }
+            if (previewMonthlyPaymentEl) {
+                previewMonthlyPaymentEl.innerText = `฿${monthlyPayment.toLocaleString('th-TH', {minimumFractionDigits: 2})} / ด.`;
             }
         }
 
@@ -1357,9 +1459,9 @@
             let totalFullSpent = 0;
 
             items.forEach(i => {
-                const amt = parseFloat(i.totalAmount || 0);
+                const amt = getItemTotalWithInterest(i);
                 totalSpent += amt;
-                if (i.payType === 'full' || i.months === 1) totalFullSpent += amt;
+                if (i.payType === 'full' || parseInt(i.months || 1) === 1) totalFullSpent += amt;
                 else totalInstallmentSpent += amt;
             });
 
@@ -1379,7 +1481,7 @@
             let nextMonthPay = 0;
 
             items.forEach(item => {
-                const monthlyPay = item.totalAmount / item.months;
+                const monthlyPay = getItemMonthlyPayment(item);
                 const { startMonth, startYear } = getItemSchedule(item);
 
                 for (let m = 0; m < item.months; m++) {
@@ -1435,7 +1537,7 @@
                 });
 
                 cardItems.forEach(item => {
-                    const monthlyPay = item.totalAmount / item.months;
+                    const monthlyPay = getItemMonthlyPayment(item);
                     const { startMonth, startYear } = getItemSchedule(item);
 
                     for (let m = 0; m < item.months; m++) {
@@ -1501,7 +1603,7 @@
             let totalMonthSpent = 0;
 
             items.forEach(item => {
-                const monthlyPay = item.totalAmount / item.months;
+                const monthlyPay = getItemMonthlyPayment(item);
                 const catName = item.category || 'อื่นๆ';
                 const { startMonth, startYear } = getItemSchedule(item);
 
@@ -1596,7 +1698,7 @@
                 const monthlyCounts = Array(12).fill(0);
 
                 activeItems.forEach(item => {
-                    const monthlyPay = item.totalAmount / item.months;
+                    const monthlyPay = getItemMonthlyPayment(item);
                     const { startMonth, startYear } = getItemSchedule(item);
 
                     for (let m = 0; m < item.months; m++) {
@@ -1659,7 +1761,10 @@
                 if (!isInstallment) return;
                 if (cardId && cardId !== 'ALL' && item.cardId !== cardId) return;
 
-                const monthlyPay = item.totalAmount / item.months;
+                const monthlyPay = getItemMonthlyPayment(item);
+                const principal = getItemPrincipal(item);
+                const interestRate = getItemInterestRate(item);
+                const totalWithInterest = getItemTotalWithInterest(item);
                 const { startMonth, startYear } = getItemSchedule(item);
                 const endInfo = getItemEndSchedule(item);
                 const itemCard = cards.find(c => c.id === item.cardId) || { name: 'ไม่ระบุ', color: 'from-indigo-600 to-blue-700' };
@@ -1697,7 +1802,10 @@
                                         ${endInfo.formatted}
                                     </span>
                                 </td>
-                                <td class="p-2.5 text-right font-semibold text-slate-500 dark:text-slate-400">฿${parseFloat(item.totalAmount).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
+                                <td class="p-2.5 text-right">
+                                    <div class="font-semibold text-slate-700 dark:text-slate-300">฿${totalWithInterest.toLocaleString('th-TH', {minimumFractionDigits: 2})}</div>
+                                    ${interestRate > 0 ? `<div class="text-[10px] text-amber-600 dark:text-amber-400">ต้น ฿${principal.toLocaleString()} (ดบ. ${interestRate}%)</div>` : ''}
+                                </td>
                             </tr>
                         `;
                         break;
@@ -1737,7 +1845,10 @@
             let activeItemCountInYear = 0;
 
             installmentItems.forEach(item => {
-                const monthlyPay = item.totalAmount / item.months;
+                const monthlyPay = getItemMonthlyPayment(item);
+                const principal = getItemPrincipal(item);
+                const interestRate = getItemInterestRate(item);
+                const totalWithInterest = getItemTotalWithInterest(item);
                 const { startMonth, startYear } = getItemSchedule(item);
                 const endInfo = getItemEndSchedule(item);
                 const card = cards.find(c => c.id === item.cardId) || { name: 'ไม่พบข้อมูลบัตร' };
@@ -1767,21 +1878,16 @@
                 }
 
                 let rowHtml = `<tr class="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition ${isItemActiveInThisYear ? '' : 'opacity-40'}">
-                    <td class="p-3 font-semibold text-slate-800 dark:text-white sticky left-0 bg-white dark:bg-slate-800 z-10 border-r border-slate-100 dark:border-slate-700 max-w-[200px]">
+                    <td class="p-3 font-semibold text-slate-800 dark:text-white sticky left-0 bg-white dark:bg-slate-800 z-10 border-r border-slate-100 dark:border-slate-700 max-w-[220px]">
                         <div class="truncate font-bold" title="${item.name}">${item.name}</div>
-                        <div class="text-[11px] text-slate-400 font-normal truncate">${item.category || 'อื่นๆ'} • เต็ม ฿${parseFloat(item.totalAmount).toLocaleString()}</div>
+                        <div class="text-[11px] ${interestRate > 0 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-400 font-normal'} truncate">
+                            ${item.category || 'อื่นๆ'}${interestRate > 0 ? ` • ต้น ฿${principal.toLocaleString()} (ดบ. ${interestRate}%) = ฿${totalWithInterest.toLocaleString()}` : ` • ฿${principal.toLocaleString()}`}
+                        </div>
                     </td>
                     <td class="p-3 whitespace-nowrap text-center">
                         <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                             ${card.name}
                         </span>
-                    </td>
-                    <td class="p-3 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                        ฿${Math.round(monthlyPay).toLocaleString()}
-                    </td>
-                    <td class="p-3 text-center whitespace-nowrap">
-                        <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">${thaiMonthsShort[startMonth - 1]} ${startYear} ➔ ${endInfo.formatted}</div>
-                        <div class="text-[10px] text-slate-400">ผ่อน ${item.months} งวด</div>
                     </td>`;
 
                 monthlyInstallmentData.forEach((data) => {
@@ -1805,14 +1911,14 @@
             });
 
             if (installmentItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="17" class="py-8 text-center text-slate-400">ไม่พบรายการผ่อนชำระที่ตรงกับเงื่อนไข</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="15" class="py-8 text-center text-slate-400">ไม่พบรายการผ่อนชำระที่ตรงกับเงื่อนไข</td></tr>`;
                 return;
             }
 
             // Summary footer row
             const grandTotalYear = monthlyGrandTotals.reduce((a, b) => a + b, 0);
             let footHtml = `<tr>
-                <td colspan="4" class="p-3 sm:p-4 font-extrabold text-slate-900 dark:text-white sticky left-0 bg-slate-100 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700">
+                <td colspan="2" class="p-3 sm:p-4 font-extrabold text-slate-900 dark:text-white sticky left-0 bg-slate-100 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700">
                     ยอดรวมผ่อนชำระทุกรายการ (ปี ${selectedYear})
                     <span class="text-xs font-normal text-slate-500 dark:text-slate-400 block">${activeItemCountInYear} รายการที่มีงวดผ่อนในปีนี้</span>
                 </td>`;
@@ -1875,9 +1981,9 @@
                 } else if (sortOrder === 'date-asc') {
                     return (a.transactionDate || '').localeCompare(b.transactionDate || '');
                 } else if (sortOrder === 'amount-desc') {
-                    return (parseFloat(b.totalAmount) || 0) - (parseFloat(a.totalAmount) || 0);
+                    return getItemTotalWithInterest(b) - getItemTotalWithInterest(a);
                 } else if (sortOrder === 'amount-asc') {
-                    return (parseFloat(a.totalAmount) || 0) - (parseFloat(b.totalAmount) || 0);
+                    return getItemTotalWithInterest(a) - getItemTotalWithInterest(b);
                 }
                 return 0;
             });
@@ -1891,7 +1997,10 @@
 
             filtered.forEach(item => {
                 const card = cards.find(c => c.id === item.cardId) || { name: 'ไม่พบข้อมูลบัตร' };
-                const monthlyPay = item.totalAmount / item.months;
+                const principal = getItemPrincipal(item);
+                const interestRate = getItemInterestRate(item);
+                const totalWithInterest = getItemTotalWithInterest(item);
+                const monthlyPay = getItemMonthlyPayment(item);
                 const isFullPay = item.payType === 'full' || parseInt(item.months) === 1;
 
                 const { startMonth, startYear } = getItemSchedule(item);
@@ -1907,7 +2016,10 @@
                         <td class="p-3.5 font-semibold text-slate-800 dark:text-white">${item.name}</td>
                         <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">${card.name}</span></td>
                         <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">${item.category || 'อื่นๆ'}</span></td>
-                        <td class="p-3.5 text-right font-semibold text-slate-800 dark:text-white">฿${parseFloat(item.totalAmount).toLocaleString('th-TH', {minimumFractionDigits: 2})}</td>
+                        <td class="p-3.5 text-right">
+                            <div class="font-semibold text-slate-800 dark:text-white">฿${totalWithInterest.toLocaleString('th-TH', {minimumFractionDigits: 2})}</div>
+                            ${interestRate > 0 ? `<div class="text-[10px] text-amber-600 dark:text-amber-400 font-medium">ต้น ฿${principal.toLocaleString()} (ดบ. ${interestRate}%)</div>` : ''}
+                        </td>
                         <td class="p-3.5 text-center">${payBadge}</td>
                         <td class="p-3.5 text-center font-bold">${item.months}</td>
                         <td class="p-3.5 text-right font-bold text-indigo-600 dark:text-indigo-400">฿${Math.round(monthlyPay).toLocaleString()}</td>
@@ -2138,17 +2250,26 @@
         }
 
         function togglePayTypeFields() {
-            const payType = document.querySelector('input[name="paymentType"]:checked').value;
+            const payType = document.querySelector('input[name="paymentType"]:checked')?.value || 'installment';
             const monthsContainer = document.getElementById('itemMonthsContainer');
             const monthsInput = document.getElementById('itemMonths');
+            const interestContainer = document.getElementById('itemInterestContainer');
+            const interestInput = document.getElementById('itemInterestRate');
+            const interestSummaryCard = document.getElementById('interestSummaryCard');
 
             if (payType === 'full') {
-                monthsInput.value = 1;
-                monthsContainer.classList.add('opacity-40', 'pointer-events-none');
+                if (monthsInput) monthsInput.value = 1;
+                if (interestInput) interestInput.value = 0;
+                if (monthsContainer) monthsContainer.classList.add('opacity-40', 'pointer-events-none');
+                if (interestContainer) interestContainer.classList.add('opacity-40', 'pointer-events-none');
+                if (interestSummaryCard) interestSummaryCard.classList.add('hidden');
             } else {
-                if (monthsInput.value === '1') monthsInput.value = 10;
-                monthsContainer.classList.remove('opacity-40', 'pointer-events-none');
+                if (monthsInput && monthsInput.value === '1') monthsInput.value = 10;
+                if (monthsContainer) monthsContainer.classList.remove('opacity-40', 'pointer-events-none');
+                if (interestContainer) interestContainer.classList.remove('opacity-40', 'pointer-events-none');
+                if (interestSummaryCard) interestSummaryCard.classList.remove('hidden');
             }
+            updateInterestCalculation();
         }
 
         function openAddCardModal() {
@@ -2164,7 +2285,11 @@
             document.getElementById('itemModalTitle').innerText = 'เพิ่มรายการชำระเงิน';
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('itemTransactionDate').value = today;
+            document.getElementById('itemInterestRate').value = 0;
+            document.getElementById('itemMonths').value = 10;
+            togglePayTypeFields();
             updateFirstBillingPreview();
+            updateInterestCalculation();
             openModal('addItemModal');
         }
 
@@ -2203,6 +2328,14 @@
             // Generate unique item ID if creating new item
             const id = document.getElementById('itemId').value || ('item-' + Date.now() + '-' + Math.floor(Math.random() * 10000));
             const payType = document.querySelector('input[name="paymentType"]:checked').value;
+            const principal = parseFloat(document.getElementById('itemTotalAmount').value) || 0;
+            const months = payType === 'full' ? 1 : (parseInt(document.getElementById('itemMonths').value) || 1);
+            const interestRate = payType === 'full' ? 0 : (parseFloat(document.getElementById('itemInterestRate').value) || 0);
+
+            const monthlyInterest = (interestRate > 0) ? (principal * (interestRate / 100)) : 0;
+            const interestAmount = Math.round((monthlyInterest * months) * 100) / 100;
+            const totalWithInterest = Math.round((principal + interestAmount) * 100) / 100;
+            const monthlyPayment = months > 0 ? Math.round((totalWithInterest / months) * 100) / 100 : totalWithInterest;
             
             const itemObj = {
                 id,
@@ -2212,9 +2345,14 @@
                 transactionDate: document.getElementById('itemTransactionDate').value,
                 startMonth: parseInt(document.getElementById('itemStartMonth').value),
                 startYear: parseInt(document.getElementById('itemStartYear').value),
-                totalAmount: parseFloat(document.getElementById('itemTotalAmount').value),
+                totalAmount: principal, // principal base
+                principal: principal,
+                interestRate: interestRate,
+                interestAmount: interestAmount,
+                totalWithInterest: totalWithInterest,
+                monthlyPayment: monthlyPayment,
                 payType: payType,
-                months: payType === 'full' ? 1 : parseInt(document.getElementById('itemMonths').value)
+                months: months
             };
 
             const idx = items.findIndex(i => i.id === id);
@@ -2268,7 +2406,8 @@
             document.getElementById('itemCategory').value = item.category || 'อื่นๆ';
             document.getElementById('itemCardId').value = item.cardId;
             document.getElementById('itemTransactionDate').value = item.transactionDate || new Date().toISOString().split('T')[0];
-            document.getElementById('itemTotalAmount').value = item.totalAmount;
+            document.getElementById('itemTotalAmount').value = getItemPrincipal(item);
+            document.getElementById('itemInterestRate').value = getItemInterestRate(item);
             
             const payType = item.payType || (item.months === 1 ? 'full' : 'installment');
             const radios = document.getElementsByName('paymentType');
@@ -2283,6 +2422,7 @@
 
             document.getElementById('itemModalTitle').innerText = 'แก้ไขรายการชำระเงิน';
             updateFirstBillingPreview();
+            updateInterestCalculation();
             openModal('addItemModal');
         }
 
@@ -2297,6 +2437,12 @@
                 // Sheet 1: Items
                 const itemsExportData = items.map((i, idx) => {
                     const card = cards.find(c => c.id === i.cardId) || { name: 'ไม่ระบุ' };
+                    const principal = getItemPrincipal(i);
+                    const rate = getItemInterestRate(i);
+                    const interestTotal = getItemTotalInterest(i);
+                    const totalWithInt = getItemTotalWithInterest(i);
+                    const monthlyPay = getItemMonthlyPayment(i);
+
                     return {
                         'ลำดับ': idx + 1,
                         'ID': i.id,
@@ -2304,10 +2450,13 @@
                         'รายการ / ร้านค้า': i.name,
                         'หมวดหมู่': i.category || 'อื่นๆ',
                         'บัตรเครดิต': card.name,
-                        'ยอดรวมทั้งหมด (บาท)': i.totalAmount,
+                        'ยอดเงินต้น (บาท)': principal,
                         'รูปแบบชำระ': i.payType === 'full' ? 'ชำระเต็มจำนวน' : 'ผ่อนชำระ',
                         'จำนวนงวด (เดือน)': i.months,
-                        'ยอดผ่อน/เดือน (บาท)': Math.round(i.totalAmount / i.months),
+                        'อัตราดอกเบี้ย (%/เดือน)': rate,
+                        'ดอกเบี้ยรวม (บาท)': interestTotal,
+                        'ยอดรวมทั้งสิ้น (บาท)': totalWithInt,
+                        'ยอดผ่อน/เดือน (บาท)': Math.round(monthlyPay),
                         'เดือนที่เริ่มจ่าย': i.startMonth || '',
                         'ปีที่เริ่มจ่าย': i.startYear || ''
                     };
@@ -2398,6 +2547,13 @@
                             const id = row['ID'] || ('item-' + Date.now() + '-' + Math.floor(Math.random() * 10000));
                             const payTypeStr = row['รูปแบบชำระ'];
                             const payType = payTypeStr === 'ชำระเต็มจำนวน' ? 'full' : 'installment';
+                            const principal = parseFloat(row['ยอดเงินต้น (บาท)'] || row['ยอดรวมทั้งหมด (บาท)']) || 0;
+                            const months = payType === 'full' ? 1 : (parseInt(row['จำนวนงวด (เดือน)']) || 1);
+                            const interestRate = payType === 'full' ? 0 : (parseFloat(row['อัตราดอกเบี้ย (%/เดือน)']) || 0);
+                            const monthlyInterest = (interestRate > 0) ? (principal * (interestRate / 100)) : 0;
+                            const interestAmount = Math.round((monthlyInterest * months) * 100) / 100;
+                            const totalWithInterest = Math.round((principal + interestAmount) * 100) / 100;
+                            const monthlyPayment = months > 0 ? Math.round((totalWithInterest / months) * 100) / 100 : totalWithInterest;
 
                             const itemObj = {
                                 id,
@@ -2405,9 +2561,14 @@
                                 name: row['รายการ / ร้านค้า'] || 'รายการนำเข้า',
                                 category: row['หมวดหมู่'] || 'อื่นๆ',
                                 transactionDate: row['วันที่ทำรายการ'] || new Date().toISOString().split('T')[0],
-                                totalAmount: parseFloat(row['ยอดรวมทั้งหมด (บาท)']) || 0,
+                                totalAmount: principal,
+                                principal: principal,
+                                interestRate: interestRate,
+                                interestAmount: interestAmount,
+                                totalWithInterest: totalWithInterest,
+                                monthlyPayment: monthlyPayment,
                                 payType: payType,
-                                months: payType === 'full' ? 1 : (parseInt(row['จำนวนงวด (เดือน)']) || 1),
+                                months: months,
                                 startMonth: parseInt(row['เดือนที่เริ่มจ่าย']) || 1,
                                 startYear: parseInt(row['ปีที่เริ่มจ่าย']) || 2026
                             };
