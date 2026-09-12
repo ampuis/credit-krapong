@@ -427,6 +427,81 @@
                     </table>
                 </div>
             </div>
+
+            <!-- SECTION 2: Itemized Installment Timeline Schedule Matrix -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-bars-staggered text-violet-600 dark:text-violet-400 text-lg"></i>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-white">ตารางแจกแจงรายการผ่อนชำระ รายเดือน (Timeline รายการ)</h2>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">แสดงแผนผ่อนของแต่ละรายการแยกรายแถว พร้อมช่วงเดือนที่เริ่มผ่อนจนถึงเดือนที่ผ่อนหมด</p>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <!-- Search Box -->
+                        <div class="relative min-w-[150px]">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input type="text" id="timelineSearchInput" oninput="renderTimelineMatrix()" placeholder="ค้นหารายการ..." class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <!-- Card Filter -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs text-slate-500 font-medium">บัตร:</span>
+                            <select id="timelineCardFilter" onchange="renderTimelineMatrix()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                                <option value="ALL">ทุกบัตรเครดิต</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Year Filter -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs text-slate-500 font-medium">เลือกปี:</span>
+                            <select id="timelineYearSelect" onchange="renderTimelineMatrix()" class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs font-semibold text-indigo-600 dark:text-indigo-400 focus:ring-2 focus:ring-indigo-500">
+                                <option value="2026">ปี 2026</option>
+                                <option value="2027">ปี 2027</option>
+                                <option value="2028">ปี 2028</option>
+                                <option value="2029">ปี 2029</option>
+                                <option value="2030">ปี 2030</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar max-h-[650px]">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-900 text-slate-200 border-b border-slate-800 uppercase tracking-wider sticky top-0 z-20">
+                                <th class="p-3 sm:p-4 font-semibold sticky left-0 bg-slate-900 z-30 min-w-[180px]">รายการ / หมวดหมู่</th>
+                                <th class="p-3 font-semibold text-center whitespace-nowrap">บัตรเครดิต</th>
+                                <th class="p-3 font-semibold text-right whitespace-nowrap">ยอดผ่อน/ด.</th>
+                                <th class="p-3 font-semibold text-center whitespace-nowrap min-w-[150px]">ช่วงเวลาผ่อน</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">ม.ค.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">ก.พ.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">มี.ค.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">เม.ย.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">พ.ค.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">มิ.ย.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">ก.ค.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">ส.ค.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">ก.ย.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">ต.ค.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">พ.ย.</th>
+                                <th class="p-2.5 font-semibold text-center whitespace-nowrap">ธ.ค.</th>
+                                <th class="p-3 font-semibold text-right bg-slate-800 text-amber-400 whitespace-nowrap">รวมทั้งปี</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timelineMatrixBody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                        <tfoot id="timelineMatrixFoot" class="bg-slate-100 dark:bg-slate-800/90 font-bold border-t-2 border-slate-300 dark:border-slate-600 sticky bottom-0 z-20">
+                            <!-- Injected dynamically for total summary -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- TAB 3: Items List (Transactions) -->
@@ -1268,6 +1343,7 @@
             renderCardMonthlyAnalytics();
             renderCategoryAnalytics();
             renderPlannerMatrix();
+            renderTimelineMatrix();
             renderItemsList();
             renderCardsGrid();
             populateDropdowns();
@@ -1637,6 +1713,123 @@
             openModal('monthDetailsModal');
         }
 
+        function renderTimelineMatrix() {
+            const tbody = document.getElementById('timelineMatrixBody');
+            const tfoot = document.getElementById('timelineMatrixFoot');
+            if (!tbody || !tfoot) return;
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            const selectedYear = parseInt(document.getElementById('timelineYearSelect')?.value || '2026');
+            const selectedCardId = document.getElementById('timelineCardFilter')?.value || 'ALL';
+            const searchQuery = (document.getElementById('timelineSearchInput')?.value || '').toLowerCase();
+
+            // Filter items: ONLY installment items (payType !== 'full' && months > 1)
+            const installmentItems = items.filter(item => {
+                const isInstallment = item.payType !== 'full' && parseInt(item.months) > 1;
+                if (!isInstallment) return false;
+                if (selectedCardId !== 'ALL' && item.cardId !== selectedCardId) return false;
+                if (searchQuery && !(item.name || '').toLowerCase().includes(searchQuery) && !(item.category || '').toLowerCase().includes(searchQuery)) return false;
+                return true;
+            });
+
+            const monthlyGrandTotals = Array(12).fill(0);
+            let activeItemCountInYear = 0;
+
+            installmentItems.forEach(item => {
+                const monthlyPay = item.totalAmount / item.months;
+                const { startMonth, startYear } = getItemSchedule(item);
+                const endInfo = getItemEndSchedule(item);
+                const card = cards.find(c => c.id === item.cardId) || { name: 'ไม่พบข้อมูลบัตร' };
+
+                const monthlyInstallmentData = Array(12).fill(null);
+                let itemYearTotal = 0;
+                let isItemActiveInThisYear = false;
+
+                for (let m = 0; m < item.months; m++) {
+                    let yOffset = Math.floor((startMonth - 1 + m) / 12);
+                    let itemMonth = ((startMonth - 1 + m) % 12) + 1;
+                    let itemYear = parseInt(startYear) + yOffset;
+
+                    if (itemYear === selectedYear) {
+                        isItemActiveInThisYear = true;
+                        monthlyInstallmentData[itemMonth - 1] = {
+                            installmentNo: m + 1,
+                            amount: monthlyPay
+                        };
+                        monthlyGrandTotals[itemMonth - 1] += monthlyPay;
+                        itemYearTotal += monthlyPay;
+                    }
+                }
+
+                if (isItemActiveInThisYear) {
+                    activeItemCountInYear++;
+                }
+
+                let rowHtml = `<tr class="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition ${isItemActiveInThisYear ? '' : 'opacity-40'}">
+                    <td class="p-3 font-semibold text-slate-800 dark:text-white sticky left-0 bg-white dark:bg-slate-800 z-10 border-r border-slate-100 dark:border-slate-700 max-w-[200px]">
+                        <div class="truncate font-bold" title="${item.name}">${item.name}</div>
+                        <div class="text-[11px] text-slate-400 font-normal truncate">${item.category || 'อื่นๆ'} • เต็ม ฿${parseFloat(item.totalAmount).toLocaleString()}</div>
+                    </td>
+                    <td class="p-3 whitespace-nowrap text-center">
+                        <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                            ${card.name}
+                        </span>
+                    </td>
+                    <td class="p-3 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                        ฿${Math.round(monthlyPay).toLocaleString()}
+                    </td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                        <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">${thaiMonthsShort[startMonth - 1]} ${startYear} ➔ ${endInfo.formatted}</div>
+                        <div class="text-[10px] text-slate-400">ผ่อน ${item.months} งวด</div>
+                    </td>`;
+
+                monthlyInstallmentData.forEach((data) => {
+                    if (data) {
+                        rowHtml += `<td class="p-2 text-center whitespace-nowrap">
+                            <div class="px-1.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300">
+                                <div class="font-extrabold text-xs">฿${Math.round(data.amount).toLocaleString()}</div>
+                                <div class="text-[9px] text-indigo-500 dark:text-indigo-400">งวด ${data.installmentNo}/${item.months}</div>
+                            </div>
+                        </td>`;
+                    } else {
+                        rowHtml += `<td class="p-2 text-center text-slate-300 dark:text-slate-700 font-mono">-</td>`;
+                    }
+                });
+
+                rowHtml += `<td class="p-3 text-right font-extrabold ${itemYearTotal > 0 ? 'text-indigo-700 dark:text-indigo-300 bg-slate-50/60 dark:bg-slate-800/60' : 'text-slate-400'} whitespace-nowrap">
+                    ${itemYearTotal > 0 ? '฿' + Math.round(itemYearTotal).toLocaleString() : '-'}
+                </td></tr>`;
+
+                tbody.innerHTML += rowHtml;
+            });
+
+            if (installmentItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="17" class="py-8 text-center text-slate-400">ไม่พบรายการผ่อนชำระที่ตรงกับเงื่อนไข</td></tr>`;
+                return;
+            }
+
+            // Summary footer row
+            const grandTotalYear = monthlyGrandTotals.reduce((a, b) => a + b, 0);
+            let footHtml = `<tr>
+                <td colspan="4" class="p-3 sm:p-4 font-extrabold text-slate-900 dark:text-white sticky left-0 bg-slate-100 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700">
+                    ยอดรวมผ่อนชำระทุกรายการ (ปี ${selectedYear})
+                    <span class="text-xs font-normal text-slate-500 dark:text-slate-400 block">${activeItemCountInYear} รายการที่มีงวดผ่อนในปีนี้</span>
+                </td>`;
+
+            monthlyGrandTotals.forEach((val) => {
+                footHtml += `<td class="p-2.5 text-center font-black ${val > 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-300 dark:text-slate-600'} whitespace-nowrap">
+                    ${val > 0 ? '฿' + Math.round(val).toLocaleString() : '-'}
+                </td>`;
+            });
+
+            footHtml += `<td class="p-3 text-right font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 whitespace-nowrap">
+                ฿${Math.round(grandTotalYear).toLocaleString()}
+            </td></tr>`;
+
+            tfoot.innerHTML = footHtml;
+        }
+
         function renderItemsList() {
             const tbody = document.getElementById('itemsTableBody');
             if (!tbody) return;
@@ -1770,12 +1963,14 @@
             // Preserve current selections
             const curItemCard = document.getElementById('itemCardFilter')?.value || 'ALL';
             const curPlannerCard = document.getElementById('plannerCardFilter')?.value || 'ALL';
+            const curTimelineCard = document.getElementById('timelineCardFilter')?.value || 'ALL';
             const curItemCat = document.getElementById('itemCatFilter')?.value || 'ALL';
 
             // Card Dropdowns
             const cardSelect = document.getElementById('itemCardId');
             const cardFilter = document.getElementById('itemCardFilter');
             const plannerCardFilter = document.getElementById('plannerCardFilter');
+            const timelineCardFilter = document.getElementById('timelineCardFilter');
 
             if (cardSelect) {
                 const curCardSelect = cardSelect.value;
@@ -1809,6 +2004,18 @@
                     plannerCardFilter.value = curPlannerCard;
                 } else {
                     plannerCardFilter.value = 'ALL';
+                }
+            }
+
+            if (timelineCardFilter) {
+                timelineCardFilter.innerHTML = '<option value="ALL">ทุกบัตรเครดิต</option>';
+                cards.forEach(c => {
+                    timelineCardFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
+                if (cards.some(c => c.id === curTimelineCard)) {
+                    timelineCardFilter.value = curTimelineCard;
+                } else {
+                    timelineCardFilter.value = 'ALL';
                 }
             }
 
