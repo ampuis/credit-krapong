@@ -955,16 +955,16 @@
         </div>
     </div>
 
-    <!-- Modal 6: 5-Year Month Details Breakdown -->
+    <!-- Modal 6: Month Details Breakdown (Card & 5-Year Matrix) -->
     <div id="monthDetailsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150 max-h-[90vh] flex flex-col">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-150 max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg font-bold">
                         <i class="fa-solid fa-calendar-check"></i>
                     </div>
                     <div>
-                        <h3 id="monthDetailsModalTitle" class="text-base font-bold text-slate-800 dark:text-white">รายละเอียดรายการผ่อนชำระ</h3>
+                        <h3 id="monthDetailsModalTitle" class="text-base font-bold text-slate-800 dark:text-white">รายละเอียดรายการชำระเงิน</h3>
                         <p id="monthDetailsModalSubtitle" class="text-xs text-slate-500 dark:text-slate-400">รายการที่ต้องชำระในรอบเดือนนี้</p>
                     </div>
                 </div>
@@ -974,21 +974,23 @@
             </div>
 
             <div class="my-4 p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-between">
-                <span class="text-xs font-semibold text-indigo-950 dark:text-indigo-200">ยอดภาระผ่อนที่ต้องชำระทั้งหมดในเดือนนี้:</span>
+                <span class="text-xs font-semibold text-indigo-950 dark:text-indigo-200">ยอดที่ต้องชำระทั้งหมดในรอบเดือนนี้:</span>
                 <span id="monthDetailsTotalAmount" class="text-lg font-black text-indigo-600 dark:text-indigo-400">฿0.00</span>
             </div>
 
-            <div class="overflow-y-auto custom-scrollbar flex-1 -mx-2 px-2">
+            <div class="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 -mx-2 px-2">
                 <table class="w-full text-left text-xs sm:text-sm">
-                    <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase sticky top-0">
+                    <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 uppercase sticky top-0 z-10">
                         <tr>
-                            <th class="p-2.5 font-semibold">วันที่ซื้อ</th>
-                            <th class="p-2.5 font-semibold">รายการ / หมวดหมู่</th>
-                            <th class="p-2.5 font-semibold">บัตร</th>
-                            <th class="p-2.5 font-semibold text-right">ยอดเดือนนี้</th>
-                            <th class="p-2.5 font-semibold text-center">งวดที่</th>
-                            <th class="p-2.5 font-semibold text-center text-indigo-600 dark:text-indigo-400">ผ่อนหมดเดือนไหน</th>
-                            <th class="p-2.5 font-semibold text-right">ยอดเต็ม</th>
+                            <th class="p-2.5 font-semibold whitespace-nowrap">วันที่ซื้อ</th>
+                            <th class="p-2.5 font-semibold min-w-[140px]">รายการ / หมวดหมู่</th>
+                            <th class="p-2.5 font-semibold text-center whitespace-nowrap">บัตรเครดิต</th>
+                            <th class="p-2.5 font-semibold text-center whitespace-nowrap">รูปแบบ</th>
+                            <th class="p-2.5 font-semibold text-right whitespace-nowrap">ยอดเดือนนี้</th>
+                            <th class="p-2.5 font-semibold text-center whitespace-nowrap">งวดที่</th>
+                            <th class="p-2.5 font-semibold text-center text-indigo-600 dark:text-indigo-400 whitespace-nowrap">ผ่อนหมด</th>
+                            <th class="p-2.5 font-semibold text-right whitespace-nowrap">ยอดรวมจริง</th>
+                            <th class="p-2.5 font-semibold text-center whitespace-nowrap">แก้ไข</th>
                         </tr>
                     </thead>
                     <tbody id="monthDetailsTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -1076,6 +1078,33 @@
             { id: 'item-3', cardId: 'card-3', name: 'จองโรงแรมที่พักภูเก็ต', category: 'ท่องเที่ยว/โรงแรม', transactionDate: '2026-07-10', startMonth: 8, startYear: 2026, totalAmount: 24000, months: 6, payType: 'installment' }
         ];
 
+        // Safe LocalStorage Helpers to prevent crashes in iOS Safari Private Browsing
+        function safeGetStorage(key, fallback = null) {
+            try {
+                const val = localStorage.getItem(key);
+                return val !== null ? val : fallback;
+            } catch (e) {
+                console.warn('Storage read warning:', e);
+                return fallback;
+            }
+        }
+
+        function safeSetStorage(key, val) {
+            try {
+                localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+            } catch (e) {
+                console.warn('Storage write warning:', e);
+            }
+        }
+
+        function safeRemoveStorage(key) {
+            try {
+                localStorage.removeItem(key);
+            } catch (e) {
+                console.warn('Storage remove warning:', e);
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
             loadLocalStorageData();
@@ -1102,7 +1131,8 @@
         });
 
         function initTheme() {
-            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            const savedTheme = safeGetStorage('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
@@ -1112,17 +1142,17 @@
         function toggleTheme() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
+                safeSetStorage('theme', 'light');
             } else {
                 document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
+                safeSetStorage('theme', 'dark');
             }
         }
 
         function loadLocalStorageData() {
-            const savedCards = localStorage.getItem('credit_krapong_cards');
-            const savedItems = localStorage.getItem('credit_krapong_items');
-            const savedCats = localStorage.getItem('credit_krapong_cats');
+            const savedCards = safeGetStorage('credit_krapong_cards');
+            const savedItems = safeGetStorage('credit_krapong_items');
+            const savedCats = safeGetStorage('credit_krapong_cats');
 
             cards = savedCards ? JSON.parse(savedCards) : sampleCards;
             items = savedItems ? JSON.parse(savedItems) : sampleItems;
@@ -1141,13 +1171,15 @@
         }
 
         function saveLocalStorageData() {
-            localStorage.setItem('credit_krapong_cards', JSON.stringify(cards));
-            localStorage.setItem('credit_krapong_items', JSON.stringify(items));
-            localStorage.setItem('credit_krapong_cats', JSON.stringify(categories));
+            safeSetStorage('credit_krapong_cards', cards);
+            safeSetStorage('credit_krapong_items', items);
+            safeSetStorage('credit_krapong_cats', categories);
         }
 
+        let activeFirestoreUnsubscribes = [];
+
         function initFirebase() {
-            const savedConfig = localStorage.getItem('credit_krapong_firebase_cfg');
+            const savedConfig = safeGetStorage('credit_krapong_firebase_cfg');
             let fbConfig = savedConfig ? JSON.parse(savedConfig) : DEFAULT_FIREBASE_CONFIG;
             if (!fbConfig || !fbConfig.apiKey) {
                 fbConfig = DEFAULT_FIREBASE_CONFIG;
@@ -1160,22 +1192,36 @@
                 db = firebase.firestore();
                 auth = firebase.auth();
 
+                // Firestore mobile network & proxy optimization
+                try {
+                    db.settings({
+                        experimentalAutoDetectLongPolling: true,
+                        merge: true
+                    });
+                } catch(e) {
+                    // Ignore if settings already locked
+                }
+
                 auth.onAuthStateChanged((user) => {
                     currentUser = user;
                     if (user) {
-                        updateSyncBadge('online', 'เข้าสู่ระบบแล้ว');
-                        document.getElementById('firebaseHelpBanner').classList.add('hidden');
-                        document.getElementById('userBadge').classList.remove('hidden');
+                        updateSyncBadge('online', 'เข้าสู่ระบบแล้ว (ซิงก์ข้อมูล Cloud)');
+                        document.getElementById('firebaseHelpBanner')?.classList.add('hidden');
+                        document.getElementById('userBadge')?.classList.remove('hidden');
                         document.getElementById('userEmailText').innerText = user.email || 'ผู้ใช้ทั่วไป';
                         document.getElementById('authIcon').className = 'fa-solid fa-right-from-bracket text-lg text-rose-500';
                         isFirebaseConnected = true;
                         attachFirestoreListeners();
                     } else {
-                        updateSyncBadge('offline', 'ยังไม่เข้าสู่ระบบ (Local)');
-                        document.getElementById('firebaseHelpBanner').classList.remove('hidden');
-                        document.getElementById('userBadge').classList.add('hidden');
+                        updateSyncBadge('offline', 'ยังไม่เข้าสู่ระบบ (โหมด Local)');
+                        document.getElementById('firebaseHelpBanner')?.classList.remove('hidden');
+                        document.getElementById('userBadge')?.classList.add('hidden');
                         document.getElementById('authIcon').className = 'fa-solid fa-right-to-bracket text-lg';
                         isFirebaseConnected = false;
+                        activeFirestoreUnsubscribes.forEach(unsub => {
+                            if (typeof unsub === 'function') unsub();
+                        });
+                        activeFirestoreUnsubscribes = [];
                     }
                 });
             } catch (e) {
@@ -1238,20 +1284,33 @@
             const dot = document.getElementById('syncDot');
             const textEl = document.getElementById('syncText');
 
-            textEl.innerText = text;
-            if (status === 'online') {
-                badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
-                dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
-            } else {
-                badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800";
-                dot.className = "w-2 h-2 rounded-full bg-amber-500";
+            if (textEl) textEl.innerText = text;
+            if (badge && dot) {
+                if (status === 'online') {
+                    badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                } else if (status === 'syncing') {
+                    badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800";
+                    dot.className = "w-2 h-2 rounded-full bg-indigo-500 animate-spin";
+                } else {
+                    badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800";
+                    dot.className = "w-2 h-2 rounded-full bg-amber-500";
+                }
             }
         }
 
         function attachFirestoreListeners() {
-            if (!db) return;
+            if (!db || !currentUser) return;
             
-            db.collection('cards').onSnapshot(snapshot => {
+            // Clean up any existing listeners first to prevent duplicates
+            activeFirestoreUnsubscribes.forEach(unsub => {
+                if (typeof unsub === 'function') unsub();
+            });
+            activeFirestoreUnsubscribes = [];
+
+            updateSyncBadge('syncing', 'กำลังดึงข้อมูล Cloud...');
+
+            const unsubCards = db.collection('cards').onSnapshot(snapshot => {
                 const cloudCards = [];
                 snapshot.forEach(doc => cloudCards.push({ id: doc.id, ...doc.data() }));
                 if (cloudCards.length > 0) {
@@ -1259,9 +1318,14 @@
                     saveLocalStorageData();
                     renderAllViews();
                 }
+                updateSyncBadge('online', 'ซิงก์ข้อมูลเรียบร้อย');
+            }, err => {
+                console.error("Cards sync error:", err);
+                updateSyncBadge('error', 'การซิงก์บัตรขัดข้อง');
             });
+            activeFirestoreUnsubscribes.push(unsubCards);
 
-            db.collection('items').onSnapshot(snapshot => {
+            const unsubItems = db.collection('items').onSnapshot(snapshot => {
                 const cloudItems = [];
                 snapshot.forEach(doc => cloudItems.push({ id: doc.id, ...doc.data() }));
                 if (cloudItems.length > 0) {
@@ -1269,9 +1333,14 @@
                     saveLocalStorageData();
                     renderAllViews();
                 }
+                updateSyncBadge('online', 'ซิงก์ข้อมูลเรียบร้อย');
+            }, err => {
+                console.error("Items sync error:", err);
+                updateSyncBadge('error', 'การซิงก์รายการขัดข้อง');
             });
+            activeFirestoreUnsubscribes.push(unsubItems);
 
-            db.collection('categories').onSnapshot(snapshot => {
+            const unsubCats = db.collection('categories').onSnapshot(snapshot => {
                 const cloudCats = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
@@ -1285,12 +1354,15 @@
                     saveLocalStorageData();
                     renderAllViews();
                 } else {
-                    // Seed default categories to Firestore if empty with safe docId
+                    // Seed default categories if truly empty
                     defaultCategories.forEach(cat => {
                         syncToFirestore('categories', getCatDocId(cat.name), cat);
                     });
                 }
+            }, err => {
+                console.error("Categories sync error:", err);
             });
+            activeFirestoreUnsubscribes.push(unsubCats);
         }
 
         function syncToFirestore(col, id, data) {
@@ -1440,16 +1512,23 @@
             document.getElementById('itemStartYear').value = startYear.toString();
         }
 
+        let renderDebounceTimer = null;
         function renderAllViews() {
-            renderMetrics();
-            renderCardMonthlyAnalytics();
-            renderCategoryAnalytics();
-            renderPlannerMatrix();
-            renderTimelineMatrix();
-            renderItemsList();
-            renderCardsGrid();
-            populateDropdowns();
-            renderCategoryManagementList();
+            if (renderDebounceTimer) {
+                cancelAnimationFrame(renderDebounceTimer);
+            }
+            renderDebounceTimer = requestAnimationFrame(() => {
+                renderMetrics();
+                renderCardMonthlyAnalytics();
+                renderCategoryAnalytics();
+                renderPlannerMatrix();
+                renderTimelineMatrix();
+                renderItemsList();
+                renderCardsGrid();
+                populateDropdowns();
+                renderCategoryManagementList();
+                renderDebounceTimer = null;
+            });
         }
 
         function renderMetrics() {
@@ -1520,8 +1599,8 @@
             tbody.innerHTML = '';
             tfoot.innerHTML = '';
 
-            const selectedYear = parseInt(document.getElementById('cardTableYearSelect').value);
-            const selectedPayType = document.getElementById('cardTablePayTypeSelect').value; // ALL, installment, full
+            const selectedYear = parseInt(document.getElementById('cardTableYearSelect')?.value || '2026');
+            const selectedPayType = document.getElementById('cardTablePayTypeSelect')?.value || 'ALL'; // ALL, installment, full
 
             const grandMonthlyTotals = Array(12).fill(0);
 
@@ -1530,7 +1609,7 @@
 
                 const cardItems = items.filter(i => {
                     if (i.cardId !== card.id) return false;
-                    const isFull = i.payType === 'full' || parseInt(i.months) === 1;
+                    const isFull = i.payType === 'full' || parseInt(i.months || 1) === 1;
                     if (selectedPayType === 'installment' && isFull) return false;
                     if (selectedPayType === 'full' && !isFull) return false;
                     return true;
@@ -1564,10 +1643,17 @@
                     <td class="p-3 text-center text-slate-500 font-medium">วันที่ ${card.billingDay || '-'}</td>
                     <td class="p-3 text-center text-slate-500 font-medium">วันที่ ${card.dueDate || '-'}</td>`;
 
-                monthlyTotals.forEach(val => {
-                    rowHtml += `<td class="p-3 text-right ${val > 0 ? 'font-bold text-slate-800 dark:text-slate-200' : 'text-slate-300 dark:text-slate-600'}">
-                        ${val > 0 ? '฿' + Math.round(val).toLocaleString() : '-'}
-                    </td>`;
+                monthlyTotals.forEach((val, idx) => {
+                    const monthNum = idx + 1;
+                    if (val > 0) {
+                        rowHtml += `<td class="p-2 text-right">
+                            <button onclick="openCardMonthDetailsModal('${card.id}', ${selectedYear}, ${monthNum}, '${selectedPayType}')" class="w-full text-right font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 p-1.5 rounded-lg transition group cursor-pointer" title="คลิกดูรายการชำระ ${card.name} เดือน ${thaiMonthsShort[idx]} ${selectedYear}">
+                                <span>฿${Math.round(val).toLocaleString()}</span>
+                            </button>
+                        </td>`;
+                    } else {
+                        rowHtml += `<td class="p-3 text-right text-slate-300 dark:text-slate-600">-</td>`;
+                    }
                 });
 
                 rowHtml += `<td class="p-3 text-right font-extrabold text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-slate-800">
@@ -1583,10 +1669,17 @@
                 <td class="p-3 sm:p-4 font-extrabold text-slate-900 dark:text-white sticky left-0 bg-slate-100 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700">ยอดรวมทุกบัตร (${selectedYear})</td>
                 <td colspan="2" class="p-3 text-center text-slate-500 text-xs font-semibold">ทุกรอบบิล</td>`;
 
-            grandMonthlyTotals.forEach(val => {
-                footHtml += `<td class="p-3 text-right font-extrabold text-indigo-700 dark:text-indigo-300">
-                    ${val > 0 ? '฿' + Math.round(val).toLocaleString() : '-'}
-                </td>`;
+            grandMonthlyTotals.forEach((val, idx) => {
+                const monthNum = idx + 1;
+                if (val > 0) {
+                    footHtml += `<td class="p-2 text-right font-extrabold text-indigo-700 dark:text-indigo-300">
+                        <button onclick="openCardMonthDetailsModal('ALL', ${selectedYear}, ${monthNum}, '${selectedPayType}')" class="w-full text-right font-black text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-100 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 p-1.5 rounded-lg transition cursor-pointer" title="คลิกดูรายการชำระทุกบัตร เดือน ${thaiMonthsShort[idx]} ${selectedYear}">
+                            ฿${Math.round(val).toLocaleString()}
+                        </button>
+                    </td>`;
+                } else {
+                    footHtml += `<td class="p-3 text-right text-slate-300 dark:text-slate-600">-</td>`;
+                }
             });
 
             footHtml += `<td class="p-3 text-right font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40">
@@ -1597,8 +1690,12 @@
         }
 
         function renderCategoryAnalytics() {
-            const year = parseInt(document.getElementById('catYearSelect').value);
-            const month = parseInt(document.getElementById('catMonthSelect').value);
+            const catYSelect = document.getElementById('catYearSelect');
+            const catMSelect = document.getElementById('catMonthSelect');
+            if (!catYSelect || !catMSelect) return;
+
+            const year = parseInt(catYSelect.value || new Date().getFullYear().toString());
+            const month = parseInt(catMSelect.value || (new Date().getMonth() + 1).toString());
             const categoryTotals = {};
             let totalMonthSpent = 0;
 
@@ -1619,61 +1716,75 @@
                 }
             });
 
-            document.getElementById('catSummaryTitle').innerText = `สรุปค่าใช้จ่าย ${thaiMonthsFull[month - 1]} ${year}`;
-            document.getElementById('catTotalBadge').innerText = '฿' + totalMonthSpent.toLocaleString('th-TH', {minimumFractionDigits: 2});
+            const catSummaryTitle = document.getElementById('catSummaryTitle');
+            const catTotalBadge = document.getElementById('catTotalBadge');
+            if (catSummaryTitle) catSummaryTitle.innerText = `สรุปค่าใช้จ่าย ${thaiMonthsFull[month - 1]} ${year}`;
+            if (catTotalBadge) catTotalBadge.innerText = '฿' + totalMonthSpent.toLocaleString('th-TH', {minimumFractionDigits: 2});
 
             const tbody = document.getElementById('categoryTableBody');
-            tbody.innerHTML = '';
-            
-            // Sort categories by amount from High to Low (เรียงลำดับจากมากไปน้อย)
-            const catKeys = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a]);
+            if (tbody) {
+                tbody.innerHTML = '';
+                const catKeys = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a]);
 
-            if (catKeys.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400">ไม่มีรายการชำระเงินในเดือนนี้</td></tr>`;
-            } else {
-                catKeys.forEach(cat => {
-                    const amount = categoryTotals[cat];
-                    const percent = totalMonthSpent > 0 ? ((amount / totalMonthSpent) * 100).toFixed(1) : 0;
-                    const catObj = categories.find(c => c.name === cat);
-                    const color = catObj ? catObj.color : '#64748b';
+                if (catKeys.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400">ไม่มีรายการชำระเงินในเดือนนี้</td></tr>`;
+                } else {
+                    catKeys.forEach(cat => {
+                        const amount = categoryTotals[cat];
+                        const percent = totalMonthSpent > 0 ? ((amount / totalMonthSpent) * 100).toFixed(1) : 0;
+                        const catObj = categories.find(c => c.name === cat);
+                        const color = catObj ? catObj.color : '#64748b';
 
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition">
-                            <td class="py-2.5 font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${color}"></span>
-                                <span>${cat}</span>
-                            </td>
-                            <td class="py-2.5 text-right font-bold text-slate-800 dark:text-slate-100">฿${Math.round(amount).toLocaleString()}</td>
-                            <td class="py-2.5 text-right font-bold text-indigo-600 dark:text-indigo-400">${percent}%</td>
-                        </tr>
-                    `;
-                });
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition">
+                                <td class="py-2.5 font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${color}"></span>
+                                    <span>${cat}</span>
+                                </td>
+                                <td class="py-2.5 text-right font-bold text-slate-800 dark:text-slate-100">฿${Math.round(amount).toLocaleString()}</td>
+                                <td class="py-2.5 text-right font-bold text-indigo-600 dark:text-indigo-400">${percent}%</td>
+                            </tr>
+                        `;
+                    });
+                }
             }
 
-            // Donut Chart Render (Sorted High to Low)
-            const ctx = document.getElementById('categoryDonutChart').getContext('2d');
-            if (donutChartInstance) donutChartInstance.destroy();
+            // Safe Donut Chart Render
+            try {
+                const canvas = document.getElementById('categoryDonutChart');
+                if (canvas && typeof Chart !== 'undefined') {
+                    const ctx = canvas.getContext('2d');
+                    if (donutChartInstance) {
+                        donutChartInstance.destroy();
+                        donutChartInstance = null;
+                    }
 
-            const chartLabels = catKeys.length > 0 ? catKeys : ['ไม่มีข้อมูล'];
-            const chartData = catKeys.length > 0 ? catKeys.map(c => categoryTotals[c]) : [1];
-            const chartColors = catKeys.length > 0 ? catKeys.map(c => {
-                const found = categories.find(cat => cat.name === c);
-                return found ? found.color : '#64748b';
-            }) : ['#e2e8f0'];
+                    const catKeys = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a]);
+                    const chartLabels = catKeys.length > 0 ? catKeys : ['ไม่มีข้อมูล'];
+                    const chartData = catKeys.length > 0 ? catKeys.map(c => categoryTotals[c]) : [1];
+                    const chartColors = catKeys.length > 0 ? catKeys.map(c => {
+                        const found = categories.find(cat => cat.name === c);
+                        return found ? found.color : '#64748b';
+                    }) : ['#e2e8f0'];
 
-            donutChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: chartLabels,
-                    datasets: [{ data: chartData, backgroundColor: chartColors, borderWidth: 2, borderColor: '#ffffff' }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    cutout: '70%'
+                    donutChartInstance = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [{ data: chartData, backgroundColor: chartColors, borderWidth: 2, borderColor: '#ffffff' }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: { legend: { display: false } },
+                            cutout: '70%',
+                            animation: false // Disabling heavy animation prevents mobile browser canvas crashes
+                        }
+                    });
                 }
-            });
+            } catch(err) {
+                console.warn("Chart render warning:", err);
+            }
         }
 
         function renderPlannerMatrix() {
@@ -1740,26 +1851,34 @@
             });
         }
 
-        function openMonthDetailsModal(year, month, cardId) {
+        function openMonthDetailsModal(year, month, cardId = 'ALL') {
+            openCardMonthDetailsModal(cardId, year, month, 'installment');
+        }
+
+        function openCardMonthDetailsModal(cardId, year, month, payTypeFilter = 'ALL') {
             const title = document.getElementById('monthDetailsModalTitle');
             const subtitle = document.getElementById('monthDetailsModalSubtitle');
             const tbody = document.getElementById('monthDetailsTableBody');
             const totalEl = document.getElementById('monthDetailsTotalAmount');
 
             const card = (cardId && cardId !== 'ALL') ? cards.find(c => c.id === cardId) : null;
-            const cardNameStr = card ? ` • บัตร: ${card.name}` : ' • ทุกบัตรเครดิต';
+            const cardNameStr = card ? `บัตร: ${card.name}` : 'ทุกบัตรเครดิต';
+            const payTypeStr = payTypeFilter === 'installment' ? ' (เฉพาะรายการผ่อนชำระ)' : (payTypeFilter === 'full' ? ' (เฉพาะรายการชำระเต็ม)' : '');
 
-            title.innerText = `รายละเอียดรายการผ่อนชำระ: ${thaiMonthsFull[month - 1]} ${year}`;
-            subtitle.innerText = `รายการผ่อนที่ต้องชำระในรอบเดือน ${thaiMonthsShort[month - 1]} ${year}${cardNameStr}`;
+            if (title) title.innerText = `รายละเอียดรายการชำระ: ${cardNameStr}`;
+            if (subtitle) subtitle.innerText = `ประจำเดือน ${thaiMonthsFull[month - 1]} ${year}${payTypeStr}`;
 
+            if (!tbody) return;
             tbody.innerHTML = '';
             let totalMonthAmount = 0;
             let matchedCount = 0;
 
             items.forEach(item => {
-                const isInstallment = item.payType !== 'full' && parseInt(item.months) > 1;
-                if (!isInstallment) return;
                 if (cardId && cardId !== 'ALL' && item.cardId !== cardId) return;
+
+                const isFull = item.payType === 'full' || parseInt(item.months || 1) === 1;
+                if (payTypeFilter === 'installment' && isFull) return;
+                if (payTypeFilter === 'full' && !isFull) return;
 
                 const monthlyPay = getItemMonthlyPayment(item);
                 const principal = getItemPrincipal(item);
@@ -1779,32 +1898,42 @@
                         matchedCount++;
                         const currentInstallmentNo = m + 1;
 
+                        const payBadge = isFull
+                            ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">ชำระเต็ม</span>`
+                            : `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">ผ่อนชำระ</span>`;
+
+                        const installmentProgress = isFull
+                            ? `<span class="text-xs text-slate-400 font-normal">-</span>`
+                            : `<span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 font-semibold text-xs">งวด ${currentInstallmentNo}/${item.months}</span>`;
+
+                        const endMonthDisplay = isFull
+                            ? `<span class="text-xs text-slate-400 font-normal">จบในงวด</span>`
+                            : `<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">${endInfo.formatted}</span>`;
+
                         tbody.innerHTML += `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                                <td class="p-2.5 text-slate-500 font-mono text-xs">${item.transactionDate || '-'}</td>
+                                <td class="p-2.5 text-slate-500 font-mono text-xs whitespace-nowrap">${item.transactionDate || '-'}</td>
                                 <td class="p-2.5 font-semibold text-slate-800 dark:text-white">
                                     <div>${item.name}</div>
                                     <div class="text-[11px] text-slate-400 font-normal">${item.category || 'อื่นๆ'}</div>
                                 </td>
-                                <td class="p-2.5">
+                                <td class="p-2.5 whitespace-nowrap text-center">
                                     <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                                         ${itemCard.name}
                                     </span>
                                 </td>
-                                <td class="p-2.5 text-right font-bold text-indigo-600 dark:text-indigo-400">฿${Math.round(monthlyPay).toLocaleString()}</td>
-                                <td class="p-2.5 text-center">
-                                    <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 font-semibold text-xs">
-                                        งวดที่ ${currentInstallmentNo}/${item.months}
-                                    </span>
-                                </td>
-                                <td class="p-2.5 text-center">
-                                    <span class="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
-                                        ${endInfo.formatted}
-                                    </span>
-                                </td>
-                                <td class="p-2.5 text-right">
+                                <td class="p-2.5 text-center whitespace-nowrap">${payBadge}</td>
+                                <td class="p-2.5 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">฿${Math.round(monthlyPay).toLocaleString()}</td>
+                                <td class="p-2.5 text-center whitespace-nowrap">${installmentProgress}</td>
+                                <td class="p-2.5 text-center whitespace-nowrap">${endMonthDisplay}</td>
+                                <td class="p-2.5 text-right whitespace-nowrap">
                                     <div class="font-semibold text-slate-700 dark:text-slate-300">฿${totalWithInterest.toLocaleString('th-TH', {minimumFractionDigits: 2})}</div>
                                     ${interestRate > 0 ? `<div class="text-[10px] text-amber-600 dark:text-amber-400">ต้น ฿${principal.toLocaleString()} (ดบ. ${interestRate}%)</div>` : ''}
+                                </td>
+                                <td class="p-2.5 text-center whitespace-nowrap">
+                                    <button onclick="requireLogin(() => { closeModal('monthDetailsModal'); editItem('${item.id}'); })" class="px-2.5 py-1 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-400 rounded-lg transition flex items-center gap-1 mx-auto" title="แก้ไขรายการนี้">
+                                        <i class="fa-solid fa-pen-to-square"></i> แก้ไข
+                                    </button>
                                 </td>
                             </tr>
                         `;
@@ -1814,10 +1943,10 @@
             });
 
             if (matchedCount === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">ไม่พบรายการผ่อนชำระในเดือนนี้</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400">ไม่พบรายการชำระเงินในรอบเดือนนี้</td></tr>`;
             }
 
-            totalEl.innerText = '฿' + totalMonthAmount.toLocaleString('th-TH', {minimumFractionDigits: 2});
+            if (totalEl) totalEl.innerText = '฿' + totalMonthAmount.toLocaleString('th-TH', {minimumFractionDigits: 2});
             openModal('monthDetailsModal');
         }
 
@@ -2647,7 +2776,7 @@
         }
 
         function loadFirebaseConfigToModal() {
-            const savedConfig = localStorage.getItem('credit_krapong_firebase_cfg');
+            const savedConfig = safeGetStorage('credit_krapong_firebase_cfg');
             const cfg = savedConfig ? JSON.parse(savedConfig) : DEFAULT_FIREBASE_CONFIG;
             document.getElementById('cfgApiKey').value = cfg.apiKey || DEFAULT_FIREBASE_CONFIG.apiKey;
             document.getElementById('cfgAuthDomain').value = cfg.authDomain || DEFAULT_FIREBASE_CONFIG.authDomain;
@@ -2660,16 +2789,16 @@
                 authDomain: document.getElementById('cfgAuthDomain').value.trim(),
                 projectId: document.getElementById('cfgProjectId').value.trim()
             };
-            localStorage.setItem('credit_krapong_firebase_cfg', JSON.stringify(cfg));
+            safeSetStorage('credit_krapong_firebase_cfg', cfg);
             alert('บันทึกการตั้งค่าแล้ว ระบบจะทำการรีโหลดหน้าจอ');
             window.location.reload();
         }
 
         function resetDataToDefault() {
             if (confirm('ยืนยันล้างข้อมูลและกลับไปใช้ข้อมูลตัวอย่าง?')) {
-                localStorage.removeItem('credit_krapong_cards');
-                localStorage.removeItem('credit_krapong_items');
-                localStorage.removeItem('credit_krapong_cats');
+                safeRemoveStorage('credit_krapong_cards');
+                safeRemoveStorage('credit_krapong_items');
+                safeRemoveStorage('credit_krapong_cats');
                 location.reload();
             }
         }
